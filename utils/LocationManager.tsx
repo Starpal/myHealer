@@ -39,15 +39,44 @@ export const getCurrentUserLocation =
           longitude,
         });
         if (geocodedLocation && geocodedLocation.length > 0) {
-          const { city, country } = geocodedLocation[0];
-          console.log("Current location:", city, country);
-          locationName = `${city || "Unknown"}, ${country || ""}`.trim();
-        }
+           const {
+              city,
+              district,
+              subregion,
+              region,
+              country,
+              // ... altre proprietà ...
+            } = geocodedLocation[0];
+
+            let rawLocationName: string; // Variabile temporanea per il nome completo
+
+            if (district) {
+              rawLocationName = `${district}, ${country || ""}`;
+            } else if (city) {
+              rawLocationName = `${city}, ${country || ""}`;
+            } else if (subregion) {
+              rawLocationName = `${subregion}, ${country || ""}`;
+            } else if (region) {
+              rawLocationName = `${region}, ${country || ""}`;
+            } else {
+              rawLocationName = `${geocodedLocation[0].name || "Unknown Location"}, ${country || ""}`;
+            }
+
+            // Trova l'indice della prima virgola
+            const commaIndex = rawLocationName.indexOf(',');
+            if (commaIndex !== -1) {
+                // Se c'è una virgola, prendi solo la parte prima di essa
+                locationName = rawLocationName.substring(0, commaIndex).trim();
+            } else {
+                // Altrimenti, usa il nome completo (se non c'è virgola)
+                locationName = rawLocationName.trim();
+            }
+            //console.log("Current location (geocoded):", locationName);
+          }
       } catch (geocodeError) {
         console.warn("Reverse geocoding error:", geocodeError);
         // Continua anche se il reverse geocoding fallisce
       }
-      console.log("Current location:", locationName)
       // 4. Restituisce i dati della posizione
       return {
         name: locationName,

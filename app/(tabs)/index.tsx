@@ -17,23 +17,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MapView, { Marker } from "react-native-maps";
 import { getCoordinates } from "@/utils/API";
 import { getCurrentUserLocation } from "@/utils/LocationManager";
-
-type IoniconName = keyof typeof Ionicons.glyphMap;
-type MaterialCommunityIconName = keyof typeof MaterialCommunityIcons.glyphMap;
-type IconSetName = "Ionicons" | "MaterialCommunityIcons";
-type LocationItem = {
-  name: string;
-  id: string | number;
-  lat: string;
-  lon: string;
-};
-type Category = {
-	iconSet: string;
-  id: string;
-  name: string;
-  icon: string;
-  subcategories: string[];
-};
+import { Category, LocationItem } from "@/types";
 
 const categories: Category[] = [
   {

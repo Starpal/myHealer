@@ -5,19 +5,9 @@ import { ThemedView } from '../ThemedView';
 import { ThemedText } from '../ThemedText';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Category, IoniconName, MaterialCommunityIconName } from '../../types';
 
 const { width } = Dimensions.get('window'); // Per layout a griglia
-type IconSetName = "Ionicons" | "MaterialCommunityIcons";
-type IoniconName = keyof typeof Ionicons.glyphMap;
-type MaterialCommunityIconsName = keyof typeof MaterialCommunityIcons.glyphMap;
-
-interface Category {
-  id: string;
-  name: string;
-  icon: IoniconName | MaterialCommunityIconsName; // Icona da Ionicons o MaterialCommunityIcons
-  iconSet: IconSetName;
-  subcategories: string[];
-}
 
 interface AllCategoriesModalProps {
   visible: boolean;
@@ -45,7 +35,7 @@ const AllCategoriesModal: React.FC<AllCategoriesModalProps> = ({
       {item.iconSet === "Ionicons" ? (
         <Ionicons name={item.icon as IoniconName} size={40} color="#6200EE" />
       ) : (
-        <MaterialCommunityIcons name={item.icon as MaterialCommunityIconsName} size={40} color="#6200EE" />
+        <MaterialCommunityIcons name={item.icon as MaterialCommunityIconName} size={40} color="#6200EE" />
       )}
       <ThemedText style={styles.categoryGridText}>{item.name}</ThemedText>
     </TouchableOpacity>
