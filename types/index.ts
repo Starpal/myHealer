@@ -19,3 +19,17 @@ export type Category = {
   icon: IoniconName | MaterialCommunityIconName;
   subcategories: string[];
 };
+
+export interface Healer {
+    id: string;
+    name?: string;
+    healerName?: string;
+    address?: string;
+    categories: string[];
+}
+
+export interface HealerSuggestionItem {
+  id: string;
+  title: string;
+  healerData: Healer;
+}

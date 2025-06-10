@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Image } from "expo-image";
 import {
   FlatList,
@@ -8,6 +8,10 @@ import {
   ViewStyle,
   Dimensions,
 } from "react-native";
+import {
+  AutocompleteDropdown,
+  IAutocompleteDropdownRef,
+} from "react-native-autocomplete-dropdown";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -16,117 +20,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MapView, { Marker } from "react-native-maps";
 import { getCoordinates } from "@/utils/API";
-import { getCurrentUserLocation } from "@/utils/LocationManager";
+import { getCurrentUserLocation } from "@/utils/locationManager";
 import { Category, LocationItem } from "@/types";
-
-const categories: Category[] = [
-  {
-    id: "1",
-    name: "Tarot",
-    icon: "cards-outline",
-    iconSet: "MaterialCommunityIcons",
-    subcategories: ["Lettura generale", "Amore", "Carriera"],
-  },
-  {
-    id: "2",
-    name: "Astrology",
-    icon: "planet-outline",
-    iconSet: "Ionicons",
-    subcategories: ["Tema natale", "Previsioni"],
-  },
-  {
-    id: "3",
-    name: "Quantum Leap",
-    icon: "sparkles-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "4",
-    name: "Yoga",
-    icon: "yoga",
-    iconSet: "MaterialCommunityIcons",
-    subcategories: ["Hatha", "Vinyasa", "Ashtanga"],
-  },
-  {
-    id: "5",
-    name: "Meditation",
-    icon: "meditation",
-    iconSet: "MaterialCommunityIcons",
-    subcategories: [],
-  },
-  {
-    id: "6",
-    name: "Nutrition",
-    icon: "nutrition-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "7",
-    name: "Reiki",
-    icon: "hand-right-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "8",
-    name: "Coaching",
-    icon: "chatbubbles-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "9",
-    name: "Massages",
-    icon: "spa-outline",
-    iconSet: "MaterialCommunityIcons",
-    subcategories: [],
-  },
-  {
-    id: "10",
-    name: "Acupunture",
-    icon: "flask-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "11",
-    name: "Ayurveda",
-    icon: "leaf-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "12",
-    name: "Cristal therapy",
-    icon: "diamond-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "13",
-    name: "Naturopathy",
-    icon: "nutrition-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "14",
-    name: "Homeopathy",
-    icon: "medical-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  {
-    id: "15",
-    name: "Chiropractic",
-    icon: "body-outline",
-    iconSet: "Ionicons",
-    subcategories: [],
-  },
-  // TODO: Aggiungi altre categorie from API
-];
+import { categories } from "@/constants/Categories";
+import { healers } from "@/constants/Healers";
+import { Healer, HealerSuggestionItem } from "@/types";
 
 
 const screenWidth = Dimensions.get("window").width;
@@ -141,7 +39,12 @@ export default function HomeScreen() {
   };
 
   const [searchText, setSearchText] = useState("");
-	  const [displayedCategories, setDisplayedCategories] = useState(
+  const [suggestionsList, setSuggestionsList] = useState<
+    HealerSuggestionItem[] | null
+  >(null);
+  const [selectedHealer, setSelectedHealer] = useState<Healer | null>(null);
+
+  const [displayedCategories, setDisplayedCategories] = useState(
     categories.slice(0, 5) // Initially show only the first 5
   );
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -161,6 +64,9 @@ export default function HomeScreen() {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [currentMapRegion, setCurrentMapRegion] = useState(initialRegion);
 
+  const dropdownController = useRef<IAutocompleteDropdownRef | null>(null);
+  const searchRef = useRef(null);
+
   const mapRef = useRef<MapView>(null);
 
   // Stile della mappa che cambia in base allo stato di espansione
@@ -175,20 +81,71 @@ export default function HomeScreen() {
     zIndex: isMapExpanded ? 999 : 1,
   };
 
-  // Funzione per avviare la ricerca
-  // TODO: ricerca in API
-  const handleSearch = (searchText: any) => {
-    console.log("Ricerca avviata:", searchText);
-  };
+  // --- FUNZIONE PER OTTENERE I SUGGERIMENTI (CHIAMATA AD OGNI CAMBIO DI TESTO) ---
+  const getSuggestions = useCallback(async (q: string) => {
+    console.log("getSuggestions chiamato con q:", q); // AGGIUNGI QUESTO
+
+    if (typeof q !== "string" || q.length < 2) {
+
+      setSuggestionsList(null);
+      return;
+    }
+
+    const lowercasedQ = q.toLowerCase();
+    const filtered = healers.filter(
+      (healer) =>
+        healer.name?.toLowerCase().includes(lowercasedQ) ||
+        healer.healerName?.toLowerCase().includes(lowercasedQ)
+    );
+
+    const mappedSuggestions: HealerSuggestionItem[] = filtered.map(
+      (healer) => ({
+        id: healer.id,
+        title:
+          healer.name ||
+          healer.healerName ||
+          healer.address?.split(",")[0] ||
+          "N/A",
+        healerData: healer,
+      })
+    );
+    console.log("Suggerimenti mappati:", mappedSuggestions); // AGGIUNGI QUESTO
+
+    setSuggestionsList(mappedSuggestions);
+  }, []);
+
+  // --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
+  const onSelectItem = useCallback(
+    (item: any) => {
+      if (item) {
+        setSelectedHealer(item.healerData);
+        setSearchText(item.title);
+        console.log("Healer selezionato:", item.healerData);
+      } else {
+        setSelectedHealer(null);
+        if (searchText.trim() === "") {
+          setSuggestionsList(null);
+        }
+      }
+    },
+    [searchText]
+  ); // Aggiungi searchText come dipendenza se lo usi nella logica interna
 
   // Funzione per gestire la selezione della categoria (quando si clicca sui chip della FlatList principale)
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
     setSelectedSubcategory(null); // Resetta la sottocategoria al cambio di categoria
     // Ensure that if a category from the initial slice is selected, it's still centered
-    const index = displayedCategories.findIndex(c => c.id === category.id);
-    if (categoriesFlatListRef.current && index !== -1 && categoryChipWidth > 0) {
-      const offset = (categoryChipWidth + 10) * index - (screenWidth / 2) + (categoryChipWidth / 2);
+    const index = displayedCategories.findIndex((c) => c.id === category.id);
+    if (
+      categoriesFlatListRef.current &&
+      index !== -1 &&
+      categoryChipWidth > 0
+    ) {
+      const offset =
+        (categoryChipWidth + 10) * index -
+        screenWidth / 2 +
+        categoryChipWidth / 2;
       categoriesFlatListRef.current.scrollToOffset({
         offset: Math.max(0, offset),
         animated: true,
@@ -198,67 +155,67 @@ export default function HomeScreen() {
 
   // Gestisce la selezione di una categoria dalla modal
   const handleSelectCategoryFromModal = (category: Category) => {
-  // Imposta la categoria selezionata
-  setSelectedCategory(category);
-  setSelectedSubcategory(null); // Resetta la sottocategoria
+    // Imposta la categoria selezionata
+    setSelectedCategory(category);
+    setSelectedSubcategory(null); // Resetta la sottocategoria
 
-  // Chiudi la modal
-  setIsAllCategoriesModalVisible(false);
+    // Chiudi la modal
+    setIsAllCategoriesModalVisible(false);
 
-  // Variabile per tenere traccia dell'array che verrà visualizzato.
-  // La useremo sia per aggiornare lo stato, sia per il calcolo dello scroll.
-  let categoriesToDisplay: Category[];
+    // Variabile per tenere traccia dell'array che verrà visualizzato.
+    // La useremo sia per aggiornare lo stato, sia per il calcolo dello scroll.
+    let categoriesToDisplay: Category[];
 
-  // Aggiorna lo stato `displayedCategories`
-  setDisplayedCategories((prevDisplayedCategories) => {
-    const isCategoryAlreadyDisplayed = prevDisplayedCategories.some(
-      (c) => c.id === category.id
-    );
-
-    if (isCategoryAlreadyDisplayed) {
-      // Se è già presente, mantiene l'array corrente
-      categoriesToDisplay = prevDisplayedCategories;
-      return prevDisplayedCategories;
-    } else {
-      // Se la categoria NON è tra le visualizzate, aggiungila
-      let newCategories = [...prevDisplayedCategories];
-
-      if (newCategories.length >= 5) {
-        newCategories.shift(); // Rimuovi il primo elemento (il più vecchio)
-      }
-      newCategories.push(category); // Aggiungi la nuova categoria alla fine
-
-      categoriesToDisplay = newCategories; // Assegna l'array modificato a categoriesToDisplay
-      return newCategories;
-    }
-  });
-
-  // Scrolla la FlatList per centrare il chip (con slight delay)
-  if (categoriesFlatListRef.current && categoryChipWidth > 0) {
-    setTimeout(() => {
-      // Trova l'indice della categoria selezionata NELL'ARRAY CHE VERRÀ VISUALIZZATO
-      // `categoriesToDisplay` qui conterrà già l'array aggiornato (o quello precedente se non modificato)
-      const targetIndex = categoriesToDisplay.findIndex(
+    // Aggiorna lo stato `displayedCategories`
+    setDisplayedCategories((prevDisplayedCategories) => {
+      const isCategoryAlreadyDisplayed = prevDisplayedCategories.some(
         (c) => c.id === category.id
       );
 
-      if (targetIndex !== -1) {
-        // Usa scrollToIndex con viewPosition per centrare l'elemento
-        categoriesFlatListRef.current?.scrollToIndex({
-          index: targetIndex,
-          animated: true,
-          viewPosition: 0.5, // Tenta di centrare l'elemento
-        });
-      }
-    }, 100); // Un piccolo ritardo per permettere al re-render di completarsi
-  }
-};
+      if (isCategoryAlreadyDisplayed) {
+        // Se è già presente, mantiene l'array corrente
+        categoriesToDisplay = prevDisplayedCategories;
+        return prevDisplayedCategories;
+      } else {
+        // Se la categoria NON è tra le visualizzate, aggiungila
+        let newCategories = [...prevDisplayedCategories];
 
+        if (newCategories.length >= 5) {
+          newCategories.shift(); // Rimuovi il primo elemento (il più vecchio)
+        }
+        newCategories.push(category); // Aggiungi la nuova categoria alla fine
+
+        categoriesToDisplay = newCategories; // Assegna l'array modificato a categoriesToDisplay
+        return newCategories;
+      }
+    });
+
+    // Scrolla la FlatList per centrare il chip (con slight delay)
+    if (categoriesFlatListRef.current && categoryChipWidth > 0) {
+      setTimeout(() => {
+        // Trova l'indice della categoria selezionata NELL'ARRAY CHE VERRÀ VISUALIZZATO
+        // `categoriesToDisplay` qui conterrà già l'array aggiornato (o quello precedente se non modificato)
+        const targetIndex = categoriesToDisplay.findIndex(
+          (c) => c.id === category.id
+        );
+
+        if (targetIndex !== -1) {
+          // Usa scrollToIndex con viewPosition per centrare l'elemento
+          categoriesFlatListRef.current?.scrollToIndex({
+            index: targetIndex,
+            animated: true,
+            viewPosition: 0.5, // Tenta di centrare l'elemento
+          });
+        }
+      }, 100); // Un piccolo ritardo per permettere al re-render di completarsi
+    }
+  };
 
   // Funzione per il calcolo del layout dell'elemento della FlatList
   const getItemLayout = (data: any, index: number) => {
     // Ensure CHIP_TOTAL_WIDTH is based on a measured value or a reasonable default
-    const CHIP_TOTAL_WIDTH = categoryChipWidth > 0 ? categoryChipWidth + 10 : 120; // 10 for marginRight
+    const CHIP_TOTAL_WIDTH =
+      categoryChipWidth > 0 ? categoryChipWidth + 10 : 120; // 10 for marginRight
 
     return {
       length: CHIP_TOTAL_WIDTH,
@@ -269,7 +226,10 @@ export default function HomeScreen() {
 
   // Funzione per misurare la larghezza di un chip di categoria
   const onChipLayout = (event: any) => {
-    if (categoryChipWidth === 0 || event.nativeEvent.layout.width !== categoryChipWidth) {
+    if (
+      categoryChipWidth === 0 ||
+      event.nativeEvent.layout.width !== categoryChipWidth
+    ) {
       setCategoryChipWidth(event.nativeEvent.layout.width);
     }
   };
@@ -376,12 +336,25 @@ export default function HomeScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerBackgroundColor={{ light: "#fff", dark: "#1D3D47" }}
       headerImage={
         <Image
-          source="https://retreathub.com/wp-content/uploads/2025/01/Shamans-Hand-Retreathub.png"
+          source={
+            "https://images.unsplash.com/photo-1494243762909-b498c7e440a9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzN8fGF1cm9yYXxlbnwwfHwwfHx8MA%3D%3D"
+          } // Path to your image
+          //"https://retreathub.com/wp-content/uploads/2025/01/Shamans-Hand-Retreathub.png"
           style={styles.logo}
         />
+      }
+      headerButton={
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => console.log("I'm a Healer")}
+        >
+          <ThemedText type="defaultSemiBold" style={styles.headerButtonText}>
+            I'm a Healer
+          </ThemedText>
+        </TouchableOpacity>
       }
     >
       <ThemedView style={styles.titleContainer}>
@@ -399,43 +372,99 @@ export default function HomeScreen() {
           color="gray"
           style={styles.searchIcon}
         />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name..."
-          placeholderTextColor="#888"
-          value={searchText}
-          onChangeText={setSearchText}
-          keyboardType="default"
-          returnKeyType="search"
-          onSubmitEditing={() => handleSearch(searchText)}
-          clearButtonMode="while-editing"
+        <AutocompleteDropdown
+          ref={searchRef}
+          controller={(c) => (dropdownController.current = c)}
+          clearOnFocus={false}
+          closeOnBlur={true}
+          closeOnSubmit={false}
+          onSelectItem={onSelectItem} // Funzione chiamata quando si seleziona un elemento dal dropdown
+          dataSet={suggestionsList} // La lista dei suggerimenti da mostrare
+          suggestionsListTextStyle={{ color: "#333" }}
+          suggestionsListContainerStyle={styles.dropdownContainer}
+          textInputProps={{
+            placeholder: "Search by name...",
+            placeholderTextColor: "#888",
+            keyboardType: "default",
+            returnKeyType: "search",
+            style: styles.searchInput,
+          }}
+          renderItem={(item: any) => (
+            <TouchableOpacity style={styles.suggestionItem}>
+              <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+              {item.healerData?.healerName && (
+                <ThemedText
+                  type="default"
+                  style={{ fontSize: 12, color: "#666" }}
+                >
+                  {item.healerData.healerName}
+                </ThemedText>
+              )}
+              {item.healerData?.address && (
+                <ThemedText
+                  type="default"
+                  style={{ fontSize: 12, color: "#999" }}
+                >
+                  {item.healerData.address.split(",")[0]}
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+          )}
+          onChangeText={getSuggestions} // Questa è la riga corretta che deve rimanere per la logica di suggerimento
+          flatListProps={{
+            keyboardShouldPersistTaps: "handled",
+          }}
         />
-        {searchText.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSearchText("")}
-            style={styles.clearButton}
-          >
-            <Ionicons name="close-circle" size={20} color="#888" />
-          </TouchableOpacity>
-        )}
       </ThemedView>
+
+      {/* --- SEZIONE RISULTATI DI RICERCA / HEALER SELEZIONATO (modifica) --- */}
+      {selectedHealer && searchText.length > 0 && (
+        <ThemedView style={styles.searchResultsContainer}>
+          <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+            Selected Healer:
+          </ThemedText>
+          <ThemedView style={styles.healerCard}>
+            <ThemedText type="defaultSemiBold">
+              {selectedHealer.name}
+            </ThemedText>
+            {selectedHealer.healerName && (
+              <ThemedText type="default">
+                Healer: {selectedHealer.healerName}
+              </ThemedText>
+            )}
+            <ThemedText type="default">{selectedHealer.address}</ThemedText>
+            <ThemedText type="default" style={styles.categoriesText}>
+              Categories: {selectedHealer.categories.join(", ")}
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
+      )}
 
       {/* Filtro per Categoria (esempio con FlatList di chip) 
 			TODO: Add 'Expand' to view all categories*/}
-			<ThemedView style={styles.categoriesTitleContainer}>
-      <ThemedText type="defaultSemiBold" style={[styles.sectionTitle, styles.categoriesTitle]}>
-        Choose a category
-      </ThemedText>
-			 <TouchableOpacity
-    style={[styles.exploreMoreButton, 
-		//	styles.standaloneExploreButton
-		]} // Aggiungi uno stile per posizionarlo
-    onPress={() => setIsAllCategoriesModalVisible(true)}
-  >
-    <ThemedText style={styles.exploreMoreText}>Explore All {'>'} </ThemedText>
-  </TouchableOpacity>
-</ThemedView>
-     {/* FlatList of categories */}
+      <ThemedView style={styles.categoriesTitleContainer}>
+        <ThemedText
+          type="defaultSemiBold"
+          style={[styles.sectionTitle, styles.categoriesTitle]}
+        >
+          Choose a category
+        </ThemedText>
+        <TouchableOpacity
+          style={[
+            styles.exploreMoreButton,
+            //	styles.standaloneExploreButton
+          ]} // Aggiungi uno stile per posizionarlo
+          onPress={() => setIsAllCategoriesModalVisible(true)}
+        >
+          <ThemedText style={styles.exploreMoreText}>Explore All</ThemedText>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={18}
+            color="#666666"
+          />
+        </TouchableOpacity>
+      </ThemedView>
+      {/* FlatList of categories */}
       <FlatList
         ref={categoriesFlatListRef}
         horizontal
@@ -495,7 +524,7 @@ export default function HomeScreen() {
         //     />
         //   </TouchableOpacity>
         // )}
-				  getItemLayout={getItemLayout}
+        getItemLayout={getItemLayout}
         style={styles.categoriesList}
       />
       {/* Sottocategorie (mostrate solo se una categoria è selezionata e ha sottocategorie) */}
@@ -613,26 +642,48 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   stepContainer: {
-		gap: 8,
+    gap: 8,
     marginBottom: 8,
   },
+  headerButton: {
+    position: "absolute",
+    top: 60,
+    right: 0,
+    backgroundColor: "#6200EE",
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    zIndex: 1000, // Assicura che il bottone sia sopra l'immagine di sfondo
+  },
+  headerButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#fff",
+    marginLeft: 5,
+  },
   logo: {
-		height: 178,
-    width: 290,
+    height: "100%",
+    width: "100%",
     bottom: 0,
     left: 0,
+    top: 50,
     position: "absolute",
   },
   sectionTitle: {
-		fontSize: 17,
+    fontSize: 17,
     fontWeight: "bold",
     marginBottom: 10,
     marginTop: 20,
   },
   searchBarContainer: {
-		flexDirection: "row",
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#F2F2F2",
     borderRadius: 25,
     paddingHorizontal: 15,
     marginVertical: 10,
@@ -642,44 +693,94 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    zIndex: 999,
+		width: '100%', 
+ 		alignSelf: 'stretch',
   },
   searchIcon: {
-		marginRight: 10,
+    marginRight: 10,
+  },
+  searchResultsContainer: {
+    paddingHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 20,
+		width: '100%', 
+		alignSelf: 'stretch',
+  },
+  healerCard: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+		width: '100%', 
+		alignSelf: 'stretch',
+  },
+  categoriesText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 5,
   },
   searchInput: {
-		flex: 1,
+    flex: 1,
     fontSize: 16,
     color: "#333",
-    borderWidth: 0,
-    padding: 0,
+    paddingRight: 10,
+    height: "100%",
+		width: "100%",
+		alignSelf: "stretch",
+  },
+  // --- NUOVI STILI PER L'AUTOCOMPLETE DROPDOWN ---
+  dropdownContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    maxHeight: 200,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+		width: "100%",
+		marginTop: 45
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#fff",
   },
   clearButton: {
-		padding: 5,
+    padding: 5,
   },
-	categoriesTitleContainer: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		marginTop: 20,
-		marginBottom: 10,
-		flexWrap: "nowrap",
-	},
-	categoriesTitle: {
-		fontSize: 17,
-		fontWeight: "bold",
-	},
-	 exploreMoreButton: {
+  categoriesTitleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    flexWrap: "nowrap",
+  },
+  categoriesTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+  },
+  exploreMoreButton: {
     flexDirection: "row",
     alignItems: "center",
-    //backgroundColor: "#E8E8E8",
     borderRadius: 20,
-    marginTop: 12,
+    marginTop: 13,
   },
   exploreMoreText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    textDecorationLine: "underline",
+    color: "#666666",
+    fontSize: 15,
     marginRight: 2,
+    marginBottom: 1,
   },
   categoriesList: {
     marginBottom: 10,
@@ -726,11 +827,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#555",
   },
-	standaloneExploreButton: {
-  alignSelf: 'flex-end', 
-  marginRight: 15,    
-  marginTop: 10,
-},
+  standaloneExploreButton: {
+    marginRight: 15,
+    marginTop: 10,
+  },
   subcategoryChipTextSelected: {
     color: "#fff",
     fontWeight: "bold",
