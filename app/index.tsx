@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Image } from "expo-image";
 import {
   FlatList,
@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   AutocompleteDropdown,
   IAutocompleteDropdownRef,
@@ -20,7 +21,7 @@ import { ThemedView } from "@/components/ThemedView";
 import AllCategoriesModal from "@/components/ui/AllCategoriesModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Callout } from "react-native-maps";
 import { getCoordinates } from "@/utils/API";
 import { getCurrentUserLocation } from "@/utils/locationManager";
 import { Category, LocationItem } from "@/types";
@@ -30,6 +31,7 @@ import { Healer, HealerSuggestionItem } from "@/types";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const initialRegion = {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
@@ -72,6 +74,15 @@ export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
 
   const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height; // Ottieni l'altezza dello schermo
+
+  // Calcolo dell'altezza della mappa quando è espansa
+  // Questo valore può variare a seconda di quanti elementi UI rimangono visibili sopra la mappa espansa
+  // HEADER_HEIGHT è 220 dal ParallaxScrollView.
+  // Se l'header scompare, potrebbe essere solo insets.top da sottrarre.
+  // Per ora, assumiamo che la mappa espansa debba coprire l'intera altezza visibile tra la status bar e la tab bar.
+  const mapExpandedCalculatedHeight = screenHeight - insets.top - insets.bottom;
+
   // Calcolo della larghezza desiderata per AutocompleteDropdown
   // Sostituisci 30, 20, 30 con le dimensioni effettive dei tuoi elementi + margini/padding.
   // 30 (padding searchBarContainer) + 20 (icona search) + 30 (bottone clear) = 80px di spazio fisso
@@ -81,13 +92,13 @@ export default function HomeScreen() {
 
   // Stile della mappa che cambia in base allo stato di espansione
   const mapStyle: ViewStyle = {
-    height: isMapExpanded ? "80%" : 150,
+    height: isMapExpanded ? mapExpandedCalculatedHeight : 150,
     flex: isMapExpanded ? 1 : undefined,
     position: isMapExpanded ? "absolute" : "relative",
     top: isMapExpanded ? 0 : undefined,
     left: isMapExpanded ? 0 : undefined,
     right: isMapExpanded ? 0 : undefined,
-    bottom: isMapExpanded ? 0 : undefined,
+    bottom: isMapExpanded ? insets.bottom : undefined,
     zIndex: isMapExpanded ? 999 : 1,
   };
 
@@ -352,6 +363,29 @@ export default function HomeScreen() {
     }
   };
 
+  // Funzione per filtrare gli healer in base alla categoria e sottocategoria selezionate
+  const filteredHealers = useMemo(() => {
+    if (!selectedCategory) {
+      return healers; // Nessuna categoria selezionata, mostra tutti gli healer
+    }
+
+    const categoryId = selectedCategory.id;
+
+    let filtered = healers.filter((healer) =>
+      healer.categories?.includes(categoryId)
+    );
+
+    if (selectedSubcategory) {
+      // Filtra ulteriormente per sottocategoria
+      filtered = filtered.filter((healer) =>
+        healer.offeredServices?.some(
+          (service) => service.name === selectedSubcategory
+        )
+      );
+    }
+    return filtered;
+  }, [selectedCategory, selectedSubcategory]);
+
     useEffect(() => {
     if (!locationText) {
       setLocationsList(undefined);
@@ -388,7 +422,7 @@ export default function HomeScreen() {
           </ThemedText>
         </TouchableOpacity>
       }
-    >
+        >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Healer finder</ThemedText>
       </ThemedView>
@@ -572,8 +606,8 @@ export default function HomeScreen() {
       />
       {/* Sottocategorie (mostrate solo se una categoria è selezionata e ha sottocategorie) */}
       {selectedCategory &&
-        selectedCategory.subcategories.length > 0 &&
-        selectedCategory.subcategories !== null && (
+        selectedCategory.subcategories &&
+        selectedCategory.subcategories.length > 0 && (
           <>
             <ThemedText style={styles.sectionTitle}>Subcategory</ThemedText>
             <FlatList
@@ -653,18 +687,56 @@ export default function HomeScreen() {
           onRegionChangeComplete={onRegionChangeComplete} // Aggiorna questo stato quando l'utente la muove
         >
       {currentMapRegion && (
-            <Marker
+              <Marker
               coordinate={{
                 latitude: currentMapRegion.latitude,
                 longitude: currentMapRegion.longitude,
               }}
               title={currentMapRegion.name} // Usa il nome dalla regione corrente
             >
-              {/* <ThemedText type="defaultSemiBold">
+              <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
-              </ThemedText> */}
+              </ThemedText>
             </Marker>
           )}
+               {/* Aggiungi i Marker per gli healer */}
+          {filteredHealers.map((healer) => {
+            // Controlla se latitude e longitude sono presenti e valide
+            if (healer.latitude !== undefined && healer.longitude !== undefined) {
+              return (
+                <Marker
+                  key={healer.id}
+                  coordinate={{
+                    latitude: healer.latitude,
+                    longitude: healer.longitude,
+                  }}
+                  // L'onPress QUI sul Marker mostrerà solo la callout/label
+                  // Non mettere il router.push qui
+                  // onPress={() => console.log('Marker clicked, showing label')}
+                  // La proprietà title popola la label standard del Marker
+                  //title={healer.name || healer.healerName || "Healer"}
+                  // description={healer.address?.split(",")[0]} // Puoi aggiungere una descrizione se vuoi
+                >
+                  {/* Il Callout è il componente che appare quando clicchi il marker */}
+                  {/* E' QUI CHE METTIAMO IL ROUTING QUANDO L'UTENTE CLICCA LA LABEL */}
+                  <Callout
+                    onPress={() => {
+                      router.push({
+                        pathname: "/healerDetails",
+                        params: { healer: JSON.stringify(healer) },
+                      });
+                    }}
+                  >
+                    <ThemedView style={styles.calloutContainer}>
+                      <ThemedText type="defaultSemiBold">{healer.name || healer.healerName}</ThemedText>
+                    </ThemedView>
+                  </Callout>
+                </Marker>
+              );
+            }
+            // Se latitude o longitude sono undefined, non renderizzare il Marker
+            return null;
+          })}
         </MapView>
       </ThemedView>
       {/* RENDER DELLA MODAL PER LE CATEGORIE */}
@@ -901,7 +973,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 15,
-  },
+   },
   expandMapButton: {
     position: "absolute", // Posiziona in alto a destra della mappa
     top: 10,
@@ -910,5 +982,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
     padding: 5,
-  }
+  },
+  calloutContainer: {
+    width: 140, // Larghezza più stretta
+    paddingVertical: 8, // Padding verticale ridotto
+    paddingHorizontal: 10, // Padding orizzontale ridotto
+    backgroundColor: 'white', // Sfondo bianco per visibilità
+    borderRadius: 8, // Bordi arrotondati
+    alignItems: 'center', // Centra il contenuto orizzontalmente
+    justifyContent: 'center', // Centra il contenuto verticalmente
+    shadowColor: '#000', // Ombra per dare profondità
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
 });

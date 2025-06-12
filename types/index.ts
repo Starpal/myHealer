@@ -18,7 +18,7 @@ export type Category = {
   id: string;
   name: string;
   icon: IoniconName | MaterialCommunityIconName;
-  subcategories: string[];
+  subcategories?: string[];
 };
 
 export interface Healer {
@@ -55,6 +55,7 @@ export interface Healer {
         price: number;
         duration: string; // e.g., "60 minutes"
     }[];
+    categories?: string[];
 }
 
 export interface HealerSuggestionItem {

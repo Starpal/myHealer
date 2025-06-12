@@ -25,27 +25,24 @@ export const healers: Healer[] = [
       linkedin: "https://linkedin.com/in/earthstarmedicine",
     },
     address: "Jl. Sugriwa No.46, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
-    latitude: -8.511541, 
+    latitude: -8.511541,
     longitude: 115.265363,
     offeredServices: [{
       id: "1",
       name: "Light Code Embodiment",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Light Transmission",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },
     {
       id: "3",
       name: "Soul reading",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },],
     services: [
       {
@@ -63,6 +60,7 @@ export const healers: Healer[] = [
         duration: "45 minutes"
       },
     ],
+    categories: ["Light Codes", "Energy Healing", "Spiritual Guidance"]
   },
   {
     id: "2",
@@ -80,25 +78,22 @@ export const healers: Healer[] = [
     },
     offeredServices: [{
       id: "1",
-      name: "Quantum Healing",
+      name: "Quantum Leap",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Quantum Jumping",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },
     {
       id: "3",
       name: "Quantum Manifestation",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },],
-
+    categories: ["Quantum Healing"]
   },
   {
     id: "3",
@@ -112,21 +107,19 @@ export const healers: Healer[] = [
       name: "Usui Reiki",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Karuna Reiki",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },
     {
       id: "3",
       name: "Tibetan Reiki",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }],
+    categories: ["Reiki"]
   },
   {
     id: "4",
@@ -140,21 +133,19 @@ export const healers: Healer[] = [
       name: "Hatha Yoga",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Vinyasa Yoga",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },
     {
       id: "3",
       name: "Ashtanga Yoga",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }],
+    categories: ["Yoga"]
   },
   {
     id: "5",
@@ -168,16 +159,14 @@ export const healers: Healer[] = [
       name: "Traditional Balinese Healing",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Palmistry",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     },
-
     ],
+    categories: ["Palmistry", "Traditional Healing", "Nutrition"]
   },
   {
     id: "6",
@@ -187,26 +176,46 @@ export const healers: Healer[] = [
     latitude: -8.5218353,
     longitude: 115.2569949,
     offeredServices: [],
+    categories: ["Yoga"]
   },
   {
     id: "7",
     name: "Bali Wellness Retreat",
     healerName: "Wayan Sudiarta",
-    address: "Jl. Raya Pengosekan No.8, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
-    latitude: -8.506899,
-    longitude: 115.262136,
-      offeredServices: [{
+    address: "Jl. Pendakian Gn. Batur, Batur Tengah, Kec. Kintamani, Kabupaten Bangli, Bali 80652",
+    latitude: -8.246088658701753,
+    longitude: 115.3962315151163,
+    offeredServices: [{
       id: "1",
       name: "Light Code Embodiment",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
     }, {
       id: "2",
       name: "Light Transmission",
       icon: "sparkles-outline",
       iconSet: "Ionicons",
-      subcategories: [],
-    }]
-    }
+    }],
+    categories: ["Light Codes"]
+  },
+  {
+    id: "8",
+    name: "Bali Healing Retreat",
+    healerName: "Ketut Sudiarta",
+    address: "Jl. Raya Ubud No.10, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
+    latitude: undefined,
+    longitude: undefined,
+    offeredServices: [{
+      id: "1",
+      name: "Light Code Embodiment",
+      icon: "sparkles-outline",
+      iconSet: "Ionicons",
+    }, {
+      id: "2",
+      name: "Light Transmission",
+      icon: "sparkles-outline",
+      iconSet: "Ionicons",
+    }],
+    categories: ["Light Codes"]
+  },
 ];

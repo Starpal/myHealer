@@ -25,9 +25,10 @@ export default function RootLayout() {
     <AutocompleteDropdownContextProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="healerDetails" />
           <Stack.Screen name="+not-found" />
-          {/* <Stack.Screen name="healerDetails" options={{ headerShown: false }} /> */}
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
