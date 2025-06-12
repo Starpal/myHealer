@@ -45,7 +45,9 @@ export interface Healer {
         linkedin?: string;
     };
     address?: string;
-    categories: Category[];
+    latitude?: number;
+    longitude?: number;
+    offeredServices?: Category[];
     services?: {
         id: string;
         name: string;
@@ -59,4 +61,13 @@ export interface HealerSuggestionItem {
   id: string;
   title: string;
   healerData: Healer;
+}
+
+export interface ContactSocialMediaConfig {
+  id: string; // Un ID unico per la chiave
+  propPath: string; // Il percorso della proprietà nell'oggetto healer (es. 'contacts.email')
+  iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap; // Nome dell'icona
+  iconSet: 'Ionicons' | 'MaterialCommunityIcons'; // Set di icone
+  getDisplayValue: (value: string) => string; // Funzione per formattare il testo visualizzato
+  getUrl: (value: string) => string; // Funzione per formattare l'URL per Linking.openURL
 }

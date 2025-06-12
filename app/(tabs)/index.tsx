@@ -9,7 +9,7 @@ import {
   ViewStyle,
   Dimensions,
 } from "react-native";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
 import {
   AutocompleteDropdown,
   IAutocompleteDropdownRef,
@@ -28,10 +28,8 @@ import { categories } from "@/constants/Categories";
 import { healers } from "@/constants/Healers";
 import { Healer, HealerSuggestionItem } from "@/types";
 
-const screenWidth = Dimensions.get("window").width;
-
 export default function HomeScreen() {
-	const router = useRouter();
+  const router = useRouter();
   const initialRegion = {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
@@ -66,8 +64,8 @@ export default function HomeScreen() {
     LocationItem[] | undefined
   >();
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [currentMapRegion, setCurrentMapRegion] = useState(initialRegion);
-
+   const [currentMapRegion, setCurrentMapRegion] = useState(initialRegion);
+ 
   const dropdownController = useRef<IAutocompleteDropdownRef | null>(null);
   const searchRef = useRef(null);
   const searchBarRef = useRef<View>(null); // Ref per il ThemedView della searchBar
@@ -125,7 +123,7 @@ export default function HomeScreen() {
     setSuggestionsList(mappedSuggestions);
   }, []);
 
-  // ***************NON FUNZIONA******* | AL SELEZIONARE PORTA AL PROFILO DELL'HEALER --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
+  // AL SELEZIONARE PORTA AL PROFILO DELL'HEALER --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
   const onSelectItem = 
 		(item: any) => {
 			console.log("SELECTED", item);
@@ -159,23 +157,15 @@ export default function HomeScreen() {
 
         finalCalculatedTop += aggressiveOffsetCompensation;
 
-        console.log("Search Bar Misurata:", {
-          fx,
-          fy,
-          width,
-          height,
-          px,
-          py,
-          finalCalculatedTop,
-        });
         setDropdownCalculatedTop(finalCalculatedTop);
       });
     }
   }, []);
 
-  // Funzione per gestire la selezione della categoria (quando si clicca sui chip della FlatList principale)
+// Funzione per gestire la selezione della categoria
   const handleCategorySelect = (category: Category) => {
-    setSelectedCategory(category);
+      // Se la categoria selezionata è la stessa, deselezionala
+     setSelectedCategory(category);
     setSelectedSubcategory(null); // Resetta la sottocategoria al cambio di categoria
     // Ensure that if a category from the initial slice is selected, it's still centered
     const index = displayedCategories.findIndex((c) => c.id === category.id);
@@ -195,8 +185,8 @@ export default function HomeScreen() {
     }
   };
 
-  // Gestisce la selezione di una categoria dalla modal
-  const handleSelectCategoryFromModal = (category: Category) => {
+   // Gestisce la selezione di una categoria dalla modal
+   const handleSelectCategoryFromModal = (category: Category) => {
     // Imposta la categoria selezionata
     setSelectedCategory(category);
     setSelectedSubcategory(null); // Resetta la sottocategoria
@@ -232,7 +222,7 @@ export default function HomeScreen() {
       }
     });
 
-    // Scrolla la FlatList per centrare il chip (con slight delay)
+   // Scrolla la FlatList per centrare il chip (con slight delay)
     if (categoriesFlatListRef.current && categoryChipWidth > 0) {
       setTimeout(() => {
         // Trova l'indice della categoria selezionata NELL'ARRAY CHE VERRÀ VISUALIZZATO
@@ -276,7 +266,7 @@ export default function HomeScreen() {
     }
   };
 
-  // onRegionChangeComplete viene chiamato solo quando l'utente ha smesso di muovere la mappa.
+ // onRegionChangeComplete viene chiamato solo quando l'utente ha smesso di muovere la mappa.
   const onRegionChangeComplete = (newRegion: {
     latitude: number;
     longitude: number;
@@ -344,7 +334,7 @@ export default function HomeScreen() {
     }
   };
 
-  const handleGetLocation = async () => {
+ const handleGetLocation = async () => {
     const userLocation = await getCurrentUserLocation(); // Chiama la funzione esterna
     if (userLocation) {
       const newRegion = {
@@ -362,7 +352,7 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     if (!locationText) {
       setLocationsList(undefined);
     }
@@ -424,7 +414,7 @@ export default function HomeScreen() {
           clearOnFocus={false}
           closeOnBlur={true}
           closeOnSubmit={false}
-         // onSelectItem={()=>onSelectItem(item)}
+          // onSelectItem={()=>onSelectItem(item)}
           dataSet={suggestionsList}
           suggestionsListTextStyle={{ color: "#333" }}
           suggestionsListContainerStyle={[
@@ -439,7 +429,10 @@ export default function HomeScreen() {
             style: styles.searchInput,
           }}
           renderItem={(item: any) => (
-            <TouchableOpacity style={styles.suggestionItem} onPress={() => onSelectItem(item)}>
+            <TouchableOpacity
+              style={styles.suggestionItem}
+              onPress={() => onSelectItem(item)}
+            >
               <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
               {item.healerData?.healerName && (
                 <ThemedText
@@ -484,7 +477,7 @@ export default function HomeScreen() {
       </ThemedView>
 
       {/* --- SEZIONE RISULTATI DI RICERCA / HEALER SELEZIONATO (modifica) --- */}
-      {selectedHealer && searchText.length > 0 && (
+      {/* {selectedHealer && searchText.length > 0 && (
         <ThemedView style={styles.searchResultsContainer}>
           <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
             Selected Healer:
@@ -500,11 +493,11 @@ export default function HomeScreen() {
             )}
             <ThemedText type="default">{selectedHealer.address}</ThemedText>
             <ThemedText type="default" style={styles.categoriesText}>
-              Categories: {selectedHealer.categories.join(", ")}
+              Categories: {selectedHealer.categories ? selectedHealer.categories.join(", ") : "N/A"}
             </ThemedText>
           </ThemedView>
         </ThemedView>
-      )}
+      )} */}
 
       {/* Filtro per Categoria (esempio con FlatList di chip) 
 			TODO: Add 'Expand' to view all categories*/}
@@ -516,9 +509,7 @@ export default function HomeScreen() {
           Choose a category
         </ThemedText>
         <TouchableOpacity
-          style={[
-            styles.exploreMoreButton,
-          ]}
+          style={styles.exploreMoreButton}
           onPress={() => setIsAllCategoriesModalVisible(true)}
         >
           <ThemedText style={styles.exploreMoreText}>Explore All</ThemedText>
@@ -645,23 +636,23 @@ export default function HomeScreen() {
       <ThemedView style={[styles.mapContainer, mapStyle]}>
         {/* Bottone per espandere/ridurre la mappa */}
         <TouchableOpacity
-          style={styles.expandMapButton} // Nuovo stile
+          style={styles.expandMapButton}
           onPress={() => setIsMapExpanded(!isMapExpanded)}
         >
           <Ionicons
-            name={isMapExpanded ? "contract-outline" : "expand-outline"} // Icona dinamica
+            name={isMapExpanded ? "contract-outline" : "expand-outline"}
             size={24}
             color="#6200EE"
           />
         </TouchableOpacity>
 
-        <MapView
+       <MapView
           ref={mapRef}
           style={styles.miniMap}
-          region={currentMapRegion}
-          onRegionChangeComplete={onRegionChangeComplete}
+          region={currentMapRegion} // La mappa è controllata da questo stato
+          onRegionChangeComplete={onRegionChangeComplete} // Aggiorna questo stato quando l'utente la muove
         >
-          {currentMapRegion && (
+      {currentMapRegion && (
             <Marker
               coordinate={{
                 latitude: currentMapRegion.latitude,
@@ -669,9 +660,9 @@ export default function HomeScreen() {
               }}
               title={currentMapRegion.name} // Usa il nome dalla regione corrente
             >
-              <ThemedText type="defaultSemiBold">
+              {/* <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
-              </ThemedText>
+              </ThemedText> */}
             </Marker>
           )}
         </MapView>
@@ -919,5 +910,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
     padding: 5,
-  },
+  }
 });

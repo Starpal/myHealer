@@ -13,19 +13,21 @@ export const healers: Healer[] = [
       phone: "+62 812-3456-7890",
       whatsapp: "https://wa.me/6281234567890",
       telegram: "https://t.me/earthstarmedicine",
-      website: "https://earthstarmedicine.com",
+      website: "https://earthstarmedicine.co.za",
     },
     socialMedia: {
       instagram: "https://instagram.com/earthstarmedicine",
       youtube: "https://youtube.com/earthstarmedicine",
       tiktok: "https://tiktok.com/@earthstarmedicine",
       pinterest: "https://pinterest.com/earthstarmedicine",
-      facebook: "https://facebook.com/earthstarmedicine",
+      facebook: "https://facebook.com/EarthStarMedicine",
       twitter: "https://twitter.com/earthstarmedicine",
       linkedin: "https://linkedin.com/in/earthstarmedicine",
     },
     address: "Jl. Sugriwa No.46, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
-    categories: [{
+    latitude: -8.511541, 
+    longitude: 115.265363,
+    offeredServices: [{
       id: "1",
       name: "Light Code Embodiment",
       icon: "sparkles-outline",
@@ -67,7 +69,16 @@ export const healers: Healer[] = [
     name: "Quantum Leap",
     healerName: "Gina Smith",
     address: "Banjar Kealusa, Keliki, Kec. Tegallalang, Kabupaten Gianyar, Bali 80571",
-    categories: [{
+    latitude: -8.518997,
+    longitude: 115.271624,
+    contacts: {
+      email: "earthstarmedicine@gmail.com",
+      phone: "+62 812-3456-7890",
+      whatsapp: "https://wa.me/6281234567890",
+      telegram: "https://t.me/earthstarmedicine",
+      website: "https://earthstarmedicine.com",
+    },
+    offeredServices: [{
       id: "1",
       name: "Quantum Healing",
       icon: "sparkles-outline",
@@ -94,7 +105,9 @@ export const healers: Healer[] = [
     name: "Reiki Healing & Reiki Training",
     healerName: "Lia",
     address: "G76C+FRG, Jl. Subak Uma Petulu Lebah, Petulu, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
-    categories: [{
+    latitude: -8.484262634398902,
+    longitude: 115.27285675285721,
+    offeredServices: [{
       id: "1",
       name: "Usui Reiki",
       icon: "sparkles-outline",
@@ -120,7 +133,9 @@ export const healers: Healer[] = [
     name: "Yoga Dharma Swasthi",
     healerName: "",
     address: "Jl. Tegal Sari, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
-    categories: [{
+    latitude: -8.508849,
+    longitude: 115.2676693,
+    offeredServices: [{
       id: "1",
       name: "Hatha Yoga",
       icon: "sparkles-outline",
@@ -146,7 +161,9 @@ export const healers: Healer[] = [
     name: "Ubud Healing Center",
     healerName: "Ketut Liyer",
     address: "Jl. Raya Goa Gajah, Bedulu, Kec. Blahbatuh, Kabupaten Gianyar, Bali 80581",
-    categories: [{
+    latitude: -8.522627,
+    longitude: 115.288256,
+    offeredServices: [{
       id: "1",
       name: "Traditional Balinese Healing",
       icon: "sparkles-outline",
@@ -166,7 +183,30 @@ export const healers: Healer[] = [
     id: "6",
     name: "Chakra Balancing Bali",
     healerName: "Made Ayu",
-    address: "Jl. Nyuh Bojong No.2, Mas, Kec. Ubud, Kabupaten Gianyar, Bali 80571",
-    categories: [],
+    address: "Jl. Nyuh Bojog No.2, Mas, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
+    latitude: -8.5218353,
+    longitude: 115.2569949,
+    offeredServices: [],
   },
+  {
+    id: "7",
+    name: "Bali Wellness Retreat",
+    healerName: "Wayan Sudiarta",
+    address: "Jl. Raya Pengosekan No.8, Ubud, Kecamatan Ubud, Kabupaten Gianyar, Bali 80571",
+    latitude: -8.506899,
+    longitude: 115.262136,
+      offeredServices: [{
+      id: "1",
+      name: "Light Code Embodiment",
+      icon: "sparkles-outline",
+      iconSet: "Ionicons",
+      subcategories: [],
+    }, {
+      id: "2",
+      name: "Light Transmission",
+      icon: "sparkles-outline",
+      iconSet: "Ionicons",
+      subcategories: [],
+    }]
+    }
 ];

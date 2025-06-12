@@ -17,7 +17,7 @@ export const categories: Category[] = [
   },
   {
     id: "3",
-    name: "Quantum Leap",
+    name: "Quantum Healing",
     icon: "sparkles-outline",
     iconSet: "Ionicons",
     subcategories: [],
@@ -105,6 +105,13 @@ export const categories: Category[] = [
     icon: "body-outline",
     iconSet: "Ionicons",
     subcategories: [],
+  },
+    {
+    id: "16",
+    name: "Light Codes",
+    icon: "sparkles-outline",
+    iconSet: "Ionicons",
+    subcategories: ["Light Code Embodiment", "Light Code Activation", "Light Transmission", "Light Code Integration"],
   },
   // TODO: Aggiungi altre categorie from API
 ];

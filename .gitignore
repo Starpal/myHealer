@@ -5,6 +5,7 @@
 # dependencies
 node_modules/
 assets/images/
+package-lock.json
 
 # Expo
 .expo/
