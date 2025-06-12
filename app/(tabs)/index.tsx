@@ -5,9 +5,11 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  View,
   ViewStyle,
   Dimensions,
 } from "react-native";
+import { useRouter } from 'expo-router';
 import {
   AutocompleteDropdown,
   IAutocompleteDropdownRef,
@@ -26,10 +28,10 @@ import { categories } from "@/constants/Categories";
 import { healers } from "@/constants/Healers";
 import { Healer, HealerSuggestionItem } from "@/types";
 
-
 const screenWidth = Dimensions.get("window").width;
 
 export default function HomeScreen() {
+	const router = useRouter();
   const initialRegion = {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
@@ -43,7 +45,9 @@ export default function HomeScreen() {
     HealerSuggestionItem[] | null
   >(null);
   const [selectedHealer, setSelectedHealer] = useState<Healer | null>(null);
-
+  const [dropdownCalculatedTop, setDropdownCalculatedTop] = useState<
+    number | null
+  >(null);
   const [displayedCategories, setDisplayedCategories] = useState(
     categories.slice(0, 5) // Initially show only the first 5
   );
@@ -66,8 +70,16 @@ export default function HomeScreen() {
 
   const dropdownController = useRef<IAutocompleteDropdownRef | null>(null);
   const searchRef = useRef(null);
-
+  const searchBarRef = useRef<View>(null); // Ref per il ThemedView della searchBar
   const mapRef = useRef<MapView>(null);
+
+  const screenWidth = Dimensions.get("window").width;
+  // Calcolo della larghezza desiderata per AutocompleteDropdown
+  // Sostituisci 30, 20, 30 con le dimensioni effettive dei tuoi elementi + margini/padding.
+  // 30 (padding searchBarContainer) + 20 (icona search) + 30 (bottone clear) = 80px di spazio fisso
+  const autocompleteDropdownCalculatedWidth = screenWidth - 15 * 2 - 20 - 30; // Esempio: 30px di padding + 20px icona + 30px bottone
+  // Potresti aver bisogno di un piccolo buffer aggiuntivo:
+  // const autocompleteDropdownCalculatedWidth = screenWidth - (15 * 2) - 20 - 30 - 10;
 
   // Stile della mappa che cambia in base allo stato di espansione
   const mapStyle: ViewStyle = {
@@ -86,7 +98,6 @@ export default function HomeScreen() {
     console.log("getSuggestions chiamato con q:", q); // AGGIUNGI QUESTO
 
     if (typeof q !== "string" || q.length < 2) {
-
       setSuggestionsList(null);
       return;
     }
@@ -114,22 +125,53 @@ export default function HomeScreen() {
     setSuggestionsList(mappedSuggestions);
   }, []);
 
-  // --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
-  const onSelectItem = useCallback(
-    (item: any) => {
+  // ***************NON FUNZIONA******* | AL SELEZIONARE PORTA AL PROFILO DELL'HEALER --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
+  const onSelectItem = 
+		(item: any) => {
+			console.log("SELECTED", item);
       if (item) {
+        console.log("Healer selezionato:", item);
         setSelectedHealer(item.healerData);
         setSearchText(item.title);
         console.log("Healer selezionato:", item.healerData);
+				 router.push({
+          pathname: "/healerDetails", // Il nome del file della pagina (senza estensione)
+          params: { healer: JSON.stringify(item.healerData) }, // <--- PASSA I DATI QUI
+        });
       } else {
         setSelectedHealer(null);
         if (searchText.trim() === "") {
           setSuggestionsList(null);
         }
       }
-    },
-    [searchText]
-  ); // Aggiungi searchText come dipendenza se lo usi nella logica interna
+    }
+
+  const onSearchBarLayout = useCallback(() => {
+    if (searchBarRef.current) {
+      searchBarRef.current.measure((fx, fy, width, height, px, py) => {
+        // py + height è il bordo inferiore della search bar.
+        let finalCalculatedTop = py + height;
+
+        // Compensazione aggressiva per un possibile offset negativo interno della libreria.
+        // Prova valori come 60, 80, 100 finché non lo vedi scendere correttamente.
+        // Iniziamo con un valore alto per essere sicuri che si sposti.
+        const aggressiveOffsetCompensation = 80; // Era 45. Proviamo un valore molto più alto.
+
+        finalCalculatedTop += aggressiveOffsetCompensation;
+
+        console.log("Search Bar Misurata:", {
+          fx,
+          fy,
+          width,
+          height,
+          px,
+          py,
+          finalCalculatedTop,
+        });
+        setDropdownCalculatedTop(finalCalculatedTop);
+      });
+    }
+  }, []);
 
   // Funzione per gestire la selezione della categoria (quando si clicca sui chip della FlatList principale)
   const handleCategorySelect = (category: Category) => {
@@ -365,7 +407,11 @@ export default function HomeScreen() {
           Find the best suitable healer around you.
         </ThemedText>
       </ThemedView>
-      <ThemedView style={styles.searchBarContainer}>
+      <ThemedView
+        ref={searchBarRef}
+        onLayout={onSearchBarLayout}
+        style={styles.searchBarContainer}
+      >
         <Ionicons
           name="search"
           size={20}
@@ -378,10 +424,13 @@ export default function HomeScreen() {
           clearOnFocus={false}
           closeOnBlur={true}
           closeOnSubmit={false}
-          onSelectItem={onSelectItem} // Funzione chiamata quando si seleziona un elemento dal dropdown
-          dataSet={suggestionsList} // La lista dei suggerimenti da mostrare
+         // onSelectItem={()=>onSelectItem(item)}
+          dataSet={suggestionsList}
           suggestionsListTextStyle={{ color: "#333" }}
-          suggestionsListContainerStyle={styles.dropdownContainer}
+          suggestionsListContainerStyle={[
+            styles.dropdownContainer,
+            { zIndex: 1, position: "absolute" }, // QUI applichiamo il top calcolato
+          ]}
           textInputProps={{
             placeholder: "Search by name...",
             placeholderTextColor: "#888",
@@ -390,7 +439,7 @@ export default function HomeScreen() {
             style: styles.searchInput,
           }}
           renderItem={(item: any) => (
-            <TouchableOpacity style={styles.suggestionItem}>
+            <TouchableOpacity style={styles.suggestionItem} onPress={() => onSelectItem(item)}>
               <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
               {item.healerData?.healerName && (
                 <ThemedText
@@ -410,11 +459,28 @@ export default function HomeScreen() {
               )}
             </TouchableOpacity>
           )}
-          onChangeText={getSuggestions} // Questa è la riga corretta che deve rimanere per la logica di suggerimento
+          onChangeText={getSuggestions}
           flatListProps={{
             keyboardShouldPersistTaps: "handled",
           }}
+          containerStyle={{
+            // width: autocompleteDropdownCalculatedWidth,
+            flex: 1, // Seleziona il restante spazio flessibile
+          }}
         />
+        <TouchableOpacity
+          onPress={() => {
+            setSearchText("");
+            setSuggestionsList(null);
+            setSelectedHealer(null);
+          }}
+          style={[
+            styles.clearButton,
+            searchText.length === 0 && { opacity: 0, pointerEvents: "none" },
+          ]}
+        >
+          <Ionicons name="close-circle" size={20} color="#888" />
+        </TouchableOpacity>
       </ThemedView>
 
       {/* --- SEZIONE RISULTATI DI RICERCA / HEALER SELEZIONATO (modifica) --- */}
@@ -452,8 +518,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={[
             styles.exploreMoreButton,
-            //	styles.standaloneExploreButton
-          ]} // Aggiungi uno stile per posizionarlo
+          ]}
           onPress={() => setIsAllCategoriesModalVisible(true)}
         >
           <ThemedText style={styles.exploreMoreText}>Explore All</ThemedText>
@@ -511,19 +576,6 @@ export default function HomeScreen() {
             </ThemedText>
           </TouchableOpacity>
         )}
-        // ListFooterComponent={() => (
-        //   <TouchableOpacity
-        //     style={styles.exploreMoreButton} // Nuovo stile
-        //     onPress={() => setIsAllCategoriesModalVisible(true)} // Apre la modal
-        //   >
-        //     <ThemedText style={styles.exploreMoreText}>Explore All</ThemedText>
-        //     <Ionicons
-        //       name="chevron-forward-outline"
-        //       size={20}
-        //       color="#6200EE"
-        //     />
-        //   </TouchableOpacity>
-        // )}
         getItemLayout={getItemLayout}
         style={styles.categoriesList}
       />
@@ -694,8 +746,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
     zIndex: 999,
-		width: '100%', 
- 		alignSelf: 'stretch',
+    width: "100%",
+    alignSelf: "stretch",
   },
   searchIcon: {
     marginRight: 10,
@@ -704,8 +756,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 15,
     marginBottom: 20,
-		width: '100%', 
-		alignSelf: 'stretch',
+    width: "100%",
+    alignSelf: "stretch",
   },
   healerCard: {
     backgroundColor: "#fff",
@@ -717,8 +769,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-		width: '100%', 
-		alignSelf: 'stretch',
   },
   categoriesText: {
     fontSize: 12,
@@ -731,8 +781,8 @@ const styles = StyleSheet.create({
     color: "#333",
     paddingRight: 10,
     height: "100%",
-		width: "100%",
-		alignSelf: "stretch",
+    // minWidth: Dimensions.get('window').width * 0.8,
+    // maxWidth: "100%",
   },
   // --- NUOVI STILI PER L'AUTOCOMPLETE DROPDOWN ---
   dropdownContainer: {
@@ -747,8 +797,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
-		width: "100%",
-		marginTop: 45
+    width: "100%",
+    zIndex: 998,
+    position: "absolute",
   },
   suggestionItem: {
     padding: 12,
@@ -758,6 +809,9 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     padding: 5,
+    width: 30,
+    justifyContent: "center",
+    alignItems: "center",
   },
   categoriesTitleContainer: {
     flexDirection: "row",
