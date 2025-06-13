@@ -1,5 +1,6 @@
 import React from "react";
-import { Image, StyleSheet, TouchableOpacity, Linking } from "react-native";
+import { StyleSheet, TouchableOpacity, Linking } from "react-native";
+import { Image } from "expo-image";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -86,6 +87,12 @@ export default function healerDetails() {
               uri: "https://images.unsplash.com/photo-1494243762909-b498c7e440a9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzN8fGF1cm9yYXxlbnwwfHwwfHx8MA%3D%3D",
             }}
             style={styles.logo}
+            // Aggiungi queste prop per una migliore gestione del caricamento
+            placeholder={{
+              uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYGD4DwAChwGAfS+g+wAAAABJRU5ErkJggg==",
+            }} // Un placeholder minimalista (pixel trasparente)
+            contentFit="cover" // Assicura che l'immagine si adatti
+            transition={300}
           />
         )
       }

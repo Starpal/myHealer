@@ -149,6 +149,10 @@ export default function HomeScreen() {
       if (dropdownController.current) {
         dropdownController.current.close();
       }
+      if (item.healerData && item.healerData.profileImage) {
+        // Pre-carica l'immagine quando si seleziona da AutocompleteDropdown
+        Image.prefetch(item.healerData.profileImage);
+      }
       router.push({
         pathname: "/healerDetails", // Il nome del file della pagina (senza estensione)
         params: { healer: JSON.stringify(item.healerData) }, // <--- PASSA I DATI QUI
@@ -400,12 +404,10 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      console.log("searchText before clear:", searchText);
       // This code will run every time the screen comes into focus
       setSearchText(""); // Clear the search text
       setSuggestionsList(null); // Clear any existing suggestions
       setSelectedHealer(null);
-      console.log("searchText AFTER clear:", searchText);
       // Deselect any previously selected healer
       if (dropdownController.current) {
         dropdownController.current.close(); // Explicitly close the dropdown
@@ -735,11 +737,12 @@ export default function HomeScreen() {
               coordinate={{
                 latitude: currentMapRegion.latitude,
                 longitude: currentMapRegion.longitude,
-              }} // title={currentMapRegion.name}
+              }}
+              title={currentMapRegion.name}
             >
-              {/* <ThemedText type="defaultSemiBold">
+              <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
-              </ThemedText> */}
+              </ThemedText>
             </Marker>
           )}
           {/* Aggiungi i Marker per gli healer */}
@@ -768,6 +771,13 @@ export default function HomeScreen() {
                   onPress={() => setActiveMarkerId(healer.id)}
                   onCalloutPress={() => {
                     setActiveMarkerId(null);
+                    if (typeof healer.profileImage === "string") {
+                      console.log(
+                        "Pre-fetching image for healer:",
+                        healer.profileImage
+                      );
+                      Image.prefetch(healer.profileImage);
+                    }
                     router.push({
                       pathname: "/healerDetails",
                       params: { healer: JSON.stringify(healer) },
