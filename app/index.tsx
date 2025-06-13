@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { Image } from "expo-image";
 import {
   FlatList,
@@ -10,7 +16,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   AutocompleteDropdown,
   IAutocompleteDropdownRef,
@@ -21,7 +27,7 @@ import { ThemedView } from "@/components/ThemedView";
 import AllCategoriesModal from "@/components/ui/AllCategoriesModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MapView, { Marker, Callout } from "react-native-maps";
+import MapView, { Marker, MapMarker } from "react-native-maps";
 import { getCoordinates } from "@/utils/API";
 import { getCurrentUserLocation } from "@/utils/locationManager";
 import { Category, LocationItem } from "@/types";
@@ -59,19 +65,21 @@ export default function HomeScreen() {
   );
   const [isAllCategoriesModalVisible, setIsAllCategoriesModalVisible] =
     useState(false);
-  const categoriesFlatListRef = useRef<FlatList<Category>>(null);
   const [categoryChipWidth, setCategoryChipWidth] = useState(0);
   const [locationText, setLocationText] = useState("");
   const [locationsList, setLocationsList] = useState<
     LocationItem[] | undefined
   >();
+  const [activeHealerId, setActiveHealerId] = useState<string | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-   const [currentMapRegion, setCurrentMapRegion] = useState(initialRegion);
- 
+  const [currentMapRegion, setCurrentMapRegion] = useState(initialRegion);
+
   const dropdownController = useRef<IAutocompleteDropdownRef | null>(null);
+  const categoriesFlatListRef = useRef<FlatList<Category>>(null);
   const searchRef = useRef(null);
   const searchBarRef = useRef<View>(null); // Ref per il ThemedView della searchBar
   const mapRef = useRef<MapView>(null);
+  const markerRefs = useRef<{ [key: string]: MapMarker | null }>({});
 
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height; // Ottieni l'altezza dello schermo
@@ -135,25 +143,24 @@ export default function HomeScreen() {
   }, []);
 
   // AL SELEZIONARE PORTA AL PROFILO DELL'HEALER --- FUNZIONE QUANDO UN SUGGERIMENTO VIENE SELEZIONATO ---
-  const onSelectItem = 
-		(item: any) => {
-			console.log("SELECTED", item);
-      if (item) {
-        console.log("Healer selezionato:", item);
-        setSelectedHealer(item.healerData);
-        setSearchText(item.title);
-        console.log("Healer selezionato:", item.healerData);
-				 router.push({
-          pathname: "/healerDetails", // Il nome del file della pagina (senza estensione)
-          params: { healer: JSON.stringify(item.healerData) }, // <--- PASSA I DATI QUI
-        });
-      } else {
-        setSelectedHealer(null);
-        if (searchText.trim() === "") {
-          setSuggestionsList(null);
-        }
+  const onSelectItem = (item: any) => {
+    console.log("SELECTED", item);
+    if (item) {
+      console.log("Healer selezionato:", item);
+      setSelectedHealer(item.healerData);
+      setSearchText(item.title);
+      console.log("Healer selezionato:", item.healerData);
+      router.push({
+        pathname: "/healerDetails", // Il nome del file della pagina (senza estensione)
+        params: { healer: JSON.stringify(item.healerData) }, // <--- PASSA I DATI QUI
+      });
+    } else {
+      setSelectedHealer(null);
+      if (searchText.trim() === "") {
+        setSuggestionsList(null);
       }
     }
+  };
 
   const onSearchBarLayout = useCallback(() => {
     if (searchBarRef.current) {
@@ -173,31 +180,36 @@ export default function HomeScreen() {
     }
   }, []);
 
-// Funzione per gestire la selezione della categoria
+  // Funzione per gestire la selezione della categoria
   const handleCategorySelect = (category: Category) => {
-      // Se la categoria selezionata è la stessa, deselezionala
-     setSelectedCategory(category);
+  // Se la categoria selezionata è la stessa, deselezionala
+  if (selectedCategory && selectedCategory.id === category.id) { // Assuming 'selectedCategory' is accessible here
+    setSelectedCategory(null); // Deseleziona la categoria
+    setSelectedSubcategory(null); // Resetta anche la sottocategoria
+  } else {
+    setSelectedCategory(category); // Seleziona la nuova categoria
     setSelectedSubcategory(null); // Resetta la sottocategoria al cambio di categoria
-    // Ensure that if a category from the initial slice is selected, it's still centered
-    const index = displayedCategories.findIndex((c) => c.id === category.id);
-    if (
-      categoriesFlatListRef.current &&
-      index !== -1 &&
-      categoryChipWidth > 0
-    ) {
-      const offset =
-        (categoryChipWidth + 10) * index -
-        screenWidth / 2 +
-        categoryChipWidth / 2;
-      categoriesFlatListRef.current.scrollToOffset({
-        offset: Math.max(0, offset),
-        animated: true,
-      });
-    }
-  };
+  }
+  // Ensure that if a category from the initial slice is selected, it's still centered
+  const index = displayedCategories.findIndex((c) => c.id === category.id);
+  if (
+    categoriesFlatListRef.current &&
+    index !== -1 &&
+    categoryChipWidth > 0
+  ) {
+    const offset =
+      (categoryChipWidth + 10) * index -
+      screenWidth / 2 +
+      categoryChipWidth / 2;
+    categoriesFlatListRef.current.scrollToOffset({
+      offset: Math.max(0, offset),
+      animated: true,
+    });
+  }
+};
 
-   // Gestisce la selezione di una categoria dalla modal
-   const handleSelectCategoryFromModal = (category: Category) => {
+  // Gestisce la selezione di una categoria dalla modal
+  const handleSelectCategoryFromModal = (category: Category) => {
     // Imposta la categoria selezionata
     setSelectedCategory(category);
     setSelectedSubcategory(null); // Resetta la sottocategoria
@@ -233,7 +245,7 @@ export default function HomeScreen() {
       }
     });
 
-   // Scrolla la FlatList per centrare il chip (con slight delay)
+    // Scrolla la FlatList per centrare il chip (con slight delay)
     if (categoriesFlatListRef.current && categoryChipWidth > 0) {
       setTimeout(() => {
         // Trova l'indice della categoria selezionata NELL'ARRAY CHE VERRÀ VISUALIZZATO
@@ -277,7 +289,7 @@ export default function HomeScreen() {
     }
   };
 
- // onRegionChangeComplete viene chiamato solo quando l'utente ha smesso di muovere la mappa.
+  // onRegionChangeComplete viene chiamato solo quando l'utente ha smesso di muovere la mappa.
   const onRegionChangeComplete = (newRegion: {
     latitude: number;
     longitude: number;
@@ -345,7 +357,7 @@ export default function HomeScreen() {
     }
   };
 
- const handleGetLocation = async () => {
+  const handleGetLocation = async () => {
     const userLocation = await getCurrentUserLocation(); // Chiama la funzione esterna
     if (userLocation) {
       const newRegion = {
@@ -386,7 +398,7 @@ export default function HomeScreen() {
     return filtered;
   }, [selectedCategory, selectedSubcategory]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!locationText) {
       setLocationsList(undefined);
     }
@@ -399,6 +411,43 @@ export default function HomeScreen() {
       mapRef.current.animateToRegion(currentMapRegion, 0); // Nessuna animazione per l'inizializzazione
     }
   }, [locationText, currentMapRegion]);
+
+  // Funzione per nascondere uno specifico callout
+  const hideSpecificCallout = useCallback((healerId: string) => {
+    if (markerRefs.current[healerId]) {
+      markerRefs.current[healerId]?.hideCallout();
+    }
+  }, []);
+
+  // Funzione per mostrare uno specifico callout, gestendo i conflitti e il "bounce"
+  const showSpecificCallout = useCallback(
+    (healerId: string) => {
+      // Caso 1: L'utente clicca sul marker che ha già il callout aperto. Chiudilo.
+      if (activeHealerId === healerId) {
+        hideSpecificCallout(healerId);
+        setActiveHealerId(null); // Nessun callout attivo ora
+        return; // Esci dalla funzione dopo aver chiuso
+      }
+
+      // Caso 2: C'è un altro callout attivo. Chiudi quello precedente.
+      if (activeHealerId && activeHealerId !== healerId) {
+        hideSpecificCallout(activeHealerId);
+      }
+
+      // Imposta il nuovo healer come attivo
+      setActiveHealerId(healerId);
+
+      // Mostra il callout per il marker corrente.
+      // Il setTimeout è cruciale. Permette a React Native Maps di aggiornare
+      // i suoi stati interni prima di chiamare `showCallout()`, prevenendo il "flickering".
+      setTimeout(() => {
+        if (markerRefs.current[healerId]) {
+          markerRefs.current[healerId]?.showCallout();
+        }
+      }, 50); // Un piccolo ritardo (50ms) per maggiore stabilità
+    },
+    [activeHealerId, hideSpecificCallout] // Dipendenze per useCallback
+  );
 
   return (
     <ParallaxScrollView
@@ -422,7 +471,7 @@ export default function HomeScreen() {
           </ThemedText>
         </TouchableOpacity>
       }
-        >
+    >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Healer finder</ThemedText>
       </ThemedView>
@@ -680,29 +729,38 @@ export default function HomeScreen() {
           />
         </TouchableOpacity>
 
-       <MapView
+        <MapView
           ref={mapRef}
           style={styles.miniMap}
           region={currentMapRegion} // La mappa è controllata da questo stato
-          onRegionChangeComplete={onRegionChangeComplete} // Aggiorna questo stato quando l'utente la muove
+          onRegionChangeComplete={onRegionChangeComplete}
+          onPress={() => {
+            if (activeHealerId) {
+              hideSpecificCallout(activeHealerId);
+              setActiveHealerId(null); // Resetta lo stato del callout attivo
+            }
+          }}
         >
-      {currentMapRegion && (
-              <Marker
+          {currentMapRegion && (
+            <Marker
               coordinate={{
                 latitude: currentMapRegion.latitude,
                 longitude: currentMapRegion.longitude,
               }}
-              title={currentMapRegion.name} // Usa il nome dalla regione corrente
+              title={currentMapRegion.name}
             >
               <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
               </ThemedText>
             </Marker>
           )}
-               {/* Aggiungi i Marker per gli healer */}
+          {/* Aggiungi i Marker per gli healer */}
           {filteredHealers.map((healer) => {
             // Controlla se latitude e longitude sono presenti e valide
-            if (healer.latitude !== undefined && healer.longitude !== undefined) {
+            if (
+              healer.latitude !== undefined &&
+              healer.longitude !== undefined
+            ) {
               return (
                 <Marker
                   key={healer.id}
@@ -710,31 +768,27 @@ export default function HomeScreen() {
                     latitude: healer.latitude,
                     longitude: healer.longitude,
                   }}
-                  // L'onPress QUI sul Marker mostrerà solo la callout/label
-                  // Non mettere il router.push qui
-                  // onPress={() => console.log('Marker clicked, showing label')}
-                  // La proprietà title popola la label standard del Marker
-                  //title={healer.name || healer.healerName || "Healer"}
-                  // description={healer.address?.split(",")[0]} // Puoi aggiungere una descrizione se vuoi
-                >
-                  {/* Il Callout è il componente che appare quando clicchi il marker */}
-                  {/* E' QUI CHE METTIAMO IL ROUTING QUANDO L'UTENTE CLICCA LA LABEL */}
-                  <Callout
-                    onPress={() => {
-                      router.push({
-                        pathname: "/healerDetails",
-                        params: { healer: JSON.stringify(healer) },
-                      });
-                    }}
-                  >
-                    <ThemedView style={styles.calloutContainer}>
-                      <ThemedText type="defaultSemiBold">{healer.name || healer.healerName}</ThemedText>
-                    </ThemedView>
-                  </Callout>
-                </Marker>
+                  title={healer.name || healer.healerName || "Healer"}
+                  ref={(el: MapMarker | null) => {
+                    markerRefs.current[healer.id] = el;
+                  }}
+                  onPress={() => showSpecificCallout(healer.id)}
+                  // Quando il callout (l'etichetta) viene cliccato, naviga e chiudi il callout
+                  onCalloutPress={() => {
+                    hideSpecificCallout(healer.id);
+                    setActiveHealerId(null);
+                    router.push({
+                      pathname: "/healerDetails",
+                      params: { healer: JSON.stringify(healer) },
+                    });
+                    // Chiudi il callout e resetta lo stato dopo la navigazione.
+                    // Anche qui un piccolo ritardo per una transizione visiva più fluida.
+                    // setTimeout(() => {
+                    // }, 50);
+                  }}
+                />
               );
             }
-            // Se latitude o longitude sono undefined, non renderizzare il Marker
             return null;
           })}
         </MapView>
@@ -973,7 +1027,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 15,
-   },
+  },
   expandMapButton: {
     position: "absolute", // Posiziona in alto a destra della mappa
     top: 10,
@@ -982,19 +1036,5 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
     padding: 5,
-  },
-  calloutContainer: {
-    width: 140, // Larghezza più stretta
-    paddingVertical: 8, // Padding verticale ridotto
-    paddingHorizontal: 10, // Padding orizzontale ridotto
-    backgroundColor: 'white', // Sfondo bianco per visibilità
-    borderRadius: 8, // Bordi arrotondati
-    alignItems: 'center', // Centra il contenuto orizzontalmente
-    justifyContent: 'center', // Centra il contenuto verticalmente
-    shadowColor: '#000', // Ombra per dare profondità
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
 });
