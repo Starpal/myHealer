@@ -38,6 +38,11 @@ import { Healer, HealerSuggestionItem } from "@/types";
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+ // Ottieni le dimensioni dello schermo
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+
   const initialRegion = {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
@@ -79,15 +84,7 @@ export default function HomeScreen() {
   const searchRef = useRef(null);
   const searchBarRef = useRef<View>(null); // Ref per il ThemedView della searchBar
   const mapRef = useRef<MapView>(null);
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = Dimensions.get("window").height; // Ottieni l'altezza dello schermo
 
-  // Calcolo dell'altezza della mappa quando è espansa
-  // Questo valore può variare a seconda di quanti elementi UI rimangono visibili sopra la mappa espansa
-  // HEADER_HEIGHT è 220 dal ParallaxScrollView.
-  // Se l'header scompare, potrebbe essere solo insets.top da sottrarre.
-  // Per ora, assumiamo che la mappa espansa debba coprire l'intera altezza visibile tra la status bar e la tab bar.
-  const mapExpandedCalculatedHeight = screenHeight - insets.top - insets.bottom;
 
   // Calcolo della larghezza desiderata per AutocompleteDropdown
   // Sostituisci 30, 20, 30 con le dimensioni effettive dei tuoi elementi + margini/padding.
@@ -95,6 +92,9 @@ export default function HomeScreen() {
   const autocompleteDropdownCalculatedWidth = screenWidth - 15 * 2 - 20 - 30; // Esempio: 30px di padding + 20px icona + 30px bottone
   // Potresti aver bisogno di un piccolo buffer aggiuntivo:
   // const autocompleteDropdownCalculatedWidth = screenWidth - (15 * 2) - 20 - 30 - 10;
+  // Calcolo dell'altezza della mappa quando è espansa
+  // Questo valore coprirà l'intera altezza visibile tra la status bar e la tab bar.
+  const mapExpandedCalculatedHeight = screenHeight - insets.top - insets.bottom;
 
   // Stile della mappa che cambia in base allo stato di espansione
   const mapStyle: ViewStyle = {
@@ -725,6 +725,16 @@ export default function HomeScreen() {
           style={styles.miniMap}
           region={currentMapRegion} // La mappa è controllata da questo stato
           onRegionChangeComplete={onRegionChangeComplete}
+          onPress={() => {
+            // Dismiss any active callout when the map background is pressed
+            // This is the correct way to hide the callout if it's open
+            if (activeMarkerId) {
+              // Note: You don't need hideSpecificCallout.
+              // Just setting activeMarkerId to null will cause the MapView
+              // to re-render and close any open callouts.
+              setActiveMarkerId(null);
+            }
+          }}
           // onPress={() => {
           //   if (activeHealerId) {
           //     hideSpecificCallout(activeHealerId);
@@ -738,23 +748,15 @@ export default function HomeScreen() {
                 latitude: currentMapRegion.latitude,
                 longitude: currentMapRegion.longitude,
               }}
-              title={currentMapRegion.name}
+              //title={currentMapRegion.name}
             >
-              <ThemedText type="defaultSemiBold">
+              {/* <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
-              </ThemedText>
+              </ThemedText> */}
             </Marker>
           )}
           {/* Aggiungi i Marker per gli healer */}
           {filteredHealers.map((healer) => {
-            const isHealerActive = activeMarkerId === healer.id;
-            // Genera una chiave dinamica per il marker attivo.
-            // Aggiungi una stringa al key se il marker è attivo, e la rimuovi quando non lo è.
-            // Questo forza React a considerare il componente Marker come "nuovo"
-            // quando setActiveMarkerId(null) viene chiamato, forzando la chiusura del callout.
-            const markerDynamicKey = isHealerActive
-              ? `${healer.id}-active`
-              : healer.id;
             // Controlla se latitude e longitude sono presenti e valide
             if (
               healer.latitude !== undefined &&
@@ -762,7 +764,7 @@ export default function HomeScreen() {
             ) {
               return (
                 <Marker
-                  key={markerDynamicKey}
+                  key={healer.id}
                   coordinate={{
                     latitude: healer.latitude,
                     longitude: healer.longitude,
@@ -770,12 +772,8 @@ export default function HomeScreen() {
                   title={healer.name || healer.healerName || "Healer"}
                   onPress={() => setActiveMarkerId(healer.id)}
                   onCalloutPress={() => {
-                    setActiveMarkerId(null);
+                    // Pre-fetch image for better perceived performance
                     if (typeof healer.profileImage === "string") {
-                      console.log(
-                        "Pre-fetching image for healer:",
-                        healer.profileImage
-                      );
                       Image.prefetch(healer.profileImage);
                     }
                     router.push({
@@ -1021,9 +1019,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   miniMap: {
+    flex: 1,
     width: "100%",
-    height: "100%",
     borderRadius: 15,
+    overflow: "hidden",
   },
   expandMapButton: {
     position: "absolute", // Posiziona in alto a destra della mappa
