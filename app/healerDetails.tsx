@@ -318,7 +318,7 @@ export default function healerDetails() {
                   config.iconSet === "Ionicons" ? (
                     <Ionicons
                       name={config.iconName as keyof typeof Ionicons.glyphMap}
-                      size={24}
+                      size={36}
                       color={iconColor}
                     />
                   ) : (
@@ -326,7 +326,7 @@ export default function healerDetails() {
                       name={
                         config.iconName as keyof typeof MaterialCommunityIcons.glyphMap
                       }
-                      size={24}
+                      size={36}
                       color={iconColor}
                     />
                   );
@@ -500,17 +500,18 @@ const styles = StyleSheet.create({
     flexWrap: "wrap", // Le icone possono andare a capo se non c'è spazio
     gap: 15, // Spazio tra le icone
     marginTop: 8,
+    width: '80%'
   },
   socialIconWrapper: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
     // Puoi aggiungere bordi, sfondi, ecc. qui se vuoi un look più distinto
   },
   socialIcon: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
   },
   categoriesContainer: {
     flexDirection: "row",
