@@ -28,7 +28,7 @@ import { ThemedView } from "@/components/ThemedView";
 import AllCategoriesModal from "@/components/ui/AllCategoriesModal";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import MapView, { Marker, MapMarker } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { getCoordinates } from "@/utils/API";
 import { getCurrentUserLocation } from "@/utils/locationManager";
 import { Category, LocationItem } from "@/types";
@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
- // Ottieni le dimensioni dello schermo
+  // Ottieni le dimensioni dello schermo
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
 
@@ -48,7 +48,7 @@ export default function HomeScreen() {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
     longitude: 115.263298, // Longitudine di Ubud
-   latitudeDelta: 0.0922, // Delta latitude per la visualizzazione
+    latitudeDelta: 0.0922, // Delta latitude per la visualizzazione
     longitudeDelta: 0.0421, // Delta longitudine per la visualizzazione
   };
 
@@ -57,9 +57,6 @@ export default function HomeScreen() {
     HealerSuggestionItem[] | null
   >(null);
   const [selectedHealer, setSelectedHealer] = useState<Healer | null>(null);
-  const [dropdownCalculatedTop, setDropdownCalculatedTop] = useState<
-    number | null
-  >(null);
   const [displayedCategories, setDisplayedCategories] = useState(
     categories.slice(0, 5) // Initially show only the first 5
   );
@@ -83,14 +80,8 @@ export default function HomeScreen() {
   const dropdownController = useRef<IAutocompleteDropdownRef | null>(null);
   const categoriesFlatListRef = useRef<FlatList<Category>>(null);
   const searchRef = useRef(null);
-  const searchBarRef = useRef<View>(null); // Ref per il ThemedView della searchBar
   const mapRef = useRef<MapView>(null);
 
-
-  // Calcolo della larghezza desiderata per AutocompleteDropdown
-  // Sostituisci 30, 20, 30 con le dimensioni effettive dei tuoi elementi + margini/padding.
-  // 30 (padding searchBarContainer) + 20 (icona search) + 30 (bottone clear) = 80px di spazio fisso
-  const autocompleteDropdownCalculatedWidth = screenWidth - 15 * 2 - 20 - 30; // Esempio: 30px di padding + 20px icona + 30px bottone
   // Potresti aver bisogno di un piccolo buffer aggiuntivo:
   // const autocompleteDropdownCalculatedWidth = screenWidth - (15 * 2) - 20 - 30 - 10;
   // Calcolo dell'altezza della mappa quando è espansa
@@ -111,8 +102,6 @@ export default function HomeScreen() {
 
   // --- FUNZIONE PER OTTENERE I SUGGERIMENTI (CHIAMATA AD OGNI CAMBIO DI TESTO) ---
   const getSuggestions = useCallback(async (q: string) => {
-    console.log("getSuggestions chiamato con q:", q); // AGGIUNGI QUESTO
-
     if (typeof q !== "string" || q.length < 2) {
       setSuggestionsList(null);
       return;
@@ -136,8 +125,6 @@ export default function HomeScreen() {
         healerData: healer,
       })
     );
-    console.log("Suggerimenti mappati:", mappedSuggestions); // AGGIUNGI QUESTO
-
     setSuggestionsList(mappedSuggestions);
   }, []);
 
@@ -166,23 +153,6 @@ export default function HomeScreen() {
     }
   };
 
-  const onSearchBarLayout = useCallback(() => {
-    if (searchBarRef.current) {
-      searchBarRef.current.measure((fx, fy, width, height, px, py) => {
-        // py + height è il bordo inferiore della search bar.
-        let finalCalculatedTop = py + height;
-
-        // Compensazione aggressiva per un possibile offset negativo interno della libreria.
-        // Prova valori come 60, 80, 100 finché non lo vedi scendere correttamente.
-        // Iniziamo con un valore alto per essere sicuri che si sposti.
-        const aggressiveOffsetCompensation = 80; // Era 45. Proviamo un valore molto più alto.
-
-        finalCalculatedTop += aggressiveOffsetCompensation;
-
-        setDropdownCalculatedTop(finalCalculatedTop);
-      });
-    }
-  }, []);
 
   // Funzione per gestire la selezione della categoria
   const handleCategorySelect = (category: Category) => {
@@ -295,21 +265,36 @@ export default function HomeScreen() {
   };
 
   // onRegionChangeComplete viene chiamato solo quando l'utente ha smesso di muovere la mappa.
-  const onRegionChangeComplete = (newRegion: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  }) => {
-    console.log("Regione cambiata (onRegionChangeComplete):", newRegion);
-    setCurrentMapRegion({
-      name: "", // OPTIONAL: cercare il nome attraverso geocoding inverso
-      latitude: newRegion.latitude,
-      longitude: newRegion.longitude,
-      latitudeDelta: newRegion.latitudeDelta,
-      longitudeDelta: newRegion.longitudeDelta,
-    });
+  const onRegionChangeComplete = useCallback((newRegion: {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}) => {
+  // Create a temporary object for the new region to compare
+  const nextRegion = {
+    name: currentMapRegion.name, // Keep the existing name unless you have a new one
+    latitude: newRegion.latitude,
+    longitude: newRegion.longitude,
+    latitudeDelta: newRegion.latitudeDelta,
+    longitudeDelta: newRegion.longitudeDelta,
   };
+
+  // Perform a deep comparison to avoid unnecessary state updates
+  // JSON.stringify is a quick way for simple objects, but a dedicated deepEqual function is better for complex objects.
+  // For map regions, this is usually sufficient.
+  if (
+    nextRegion.latitude !== currentMapRegion.latitude ||
+    nextRegion.longitude !== currentMapRegion.longitude ||
+    nextRegion.latitudeDelta !== currentMapRegion.latitudeDelta ||
+    nextRegion.longitudeDelta !== currentMapRegion.longitudeDelta
+  ) {
+    console.log("Region actually changed, updating state:", nextRegion); // Only log when it truly changes
+    setCurrentMapRegion(nextRegion);
+  } else {
+    console.log("Region did not significantly change, no state update.");
+  }
+}, []);
 
   // Funzione per ottenere le coordinate dalla località inserita
   const onLocationSubmit = (locationText: string) => {
@@ -422,19 +407,24 @@ export default function HomeScreen() {
     // and then every time the screen comes into focus.
   );
 
-  useEffect(() => {
-    if (!locationText) {
+useEffect(() => {
+  if (!locationText) {
+      console.log('SI ATTIVA')
       setLocationsList(undefined);
     }
-    // Anima la mappa alla posizione iniziale all'avvio del componente (una volta)
-    // o quando `currentMapRegion` cambia per la prima volta.
-    // Questo è utile se vuoi essere sicuro che la mappa si centri su `initialRegion`
-    // anche se il componente ha un re-render.
-    // L'animazione dovrebbe essere fatta solo se il ref è disponibile e la regione è impostata.
-  if (mapRef.current && currentMapRegion) {
-    mapRef.current.animateToRegion(currentMapRegion, 0);
-  }
-}, [locationText, currentMapRegion]); 
+}, [locationText]);
+
+// Use a separate useEffect for initial map setup if currentMapRegion needs to be set once
+useEffect(() => {
+    if (mapRef.current) {
+        mapRef.current.animateToRegion(initialRegion, 0);
+        setCurrentMapRegion(initialRegion); // Set the state once
+    }
+}, []);
+
+// useEffect(() => {
+//   console.log("Healer markers processed for rendering. IDs:", filteredHealers.map(h => h.id));
+// }, [filteredHealers]);
 
   return (
     <ParallaxScrollView
@@ -467,8 +457,6 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView
-        ref={searchBarRef}
-        onLayout={onSearchBarLayout}
         style={styles.searchBarContainer}
       >
         <Ionicons
@@ -483,7 +471,7 @@ export default function HomeScreen() {
           clearOnFocus={false}
           closeOnBlur={true}
           closeOnSubmit={false}
-          direction={Platform.select({ ios: 'down' })}
+          direction={Platform.select({ ios: "down" })}
           // onSelectItem={()=>onSelectItem(item)}
           dataSet={suggestionsList}
           suggestionsListTextStyle={{ color: "#333" }}
@@ -743,12 +731,48 @@ export default function HomeScreen() {
           //   }
           // }}
         >
-         {currentMapRegion && (
+          {/* Aggiungi i Marker per gli healer */}
+          {filteredHealers &&
+            filteredHealers.map((healer, index) => {
+              // Controlla se latitude e longitude sono presenti e valide
+              if (
+                healer.latitude !== undefined &&
+                healer.longitude !== undefined
+              ) {
+            //      console.log("Healer markers processed for rendering. IDs:", filteredHealers.map(h => h.id));
+                return (
+                  <Marker
+                    key={healer.id}
+                    coordinate={{
+                      latitude: healer.latitude,
+                      longitude: healer.longitude,
+                    }}
+                    tracksViewChanges={false}
+                    title={healer.name || healer.healerName || "Healer"}
+                    zIndex={100}
+                    onPress={() => setActiveMarkerId(healer.id)}
+                    onCalloutPress={() => {
+                      // Pre-fetch image for better perceived performance
+                      if (typeof healer.profileImage === "string") {
+                        Image.prefetch(healer.profileImage);
+                      }
+                      router.push({
+                        pathname: "/healerDetails",
+                        params: { healer: JSON.stringify(healer) },
+                      });
+                    }}
+                  />
+                );
+              }
+              return null;
+            })}
+          {currentMapRegion && (
             <Marker
               coordinate={{
                 latitude: currentMapRegion.latitude,
                 longitude: currentMapRegion.longitude,
               }}
+              zIndex={1}
               //title={currentMapRegion.name}
             >
               <ThemedText type="defaultSemiBold">
@@ -756,38 +780,6 @@ export default function HomeScreen() {
               </ThemedText>
             </Marker>
           )}
-          {/* Aggiungi i Marker per gli healer */}
-          {filteredHealers.map((healer) => {
-            // Controlla se latitude e longitude sono presenti e valide
-            if (
-              healer.latitude !== undefined &&
-              healer.longitude !== undefined
-            ) {
-              return (
-                <Marker
-                  key={healer.id}
-                  coordinate={{
-                    latitude: healer.latitude,
-                    longitude: healer.longitude,
-                  }}
-                  tracksViewChanges={false}
-                  title={healer.name || healer.healerName || "Healer"}
-                  onPress={() => setActiveMarkerId(healer.id)}
-                  onCalloutPress={() => {
-                    // Pre-fetch image for better perceived performance
-                    if (typeof healer.profileImage === "string") {
-                      Image.prefetch(healer.profileImage);
-                    }
-                    router.push({
-                      pathname: "/healerDetails",
-                      params: { healer: JSON.stringify(healer) },
-                    });
-                  }}
-                />
-              );
-            }
-            return null;
-          })}
         </MapView>
       </ThemedView>
       {/* RENDER DELLA MODAL PER LE CATEGORIE */}

@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ImageSourcePropType } from "react-native";
+import { ColorValue } from 'react-native'; // Importa ColorValue se non lo è già
 
 export type IoniconName = keyof typeof Ionicons.glyphMap;
 export type MaterialCommunityIconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -64,11 +65,16 @@ export interface HealerSuggestionItem {
   healerData: Healer;
 }
 
+export interface contactsAndsocialMediaColors {
+  [key: string]: string;
+}
+
+// Interfaccia per la configurazione dei contatti/social media
 export interface ContactSocialMediaConfig {
-  id: string; // Un ID unico per la chiave
-  propPath: string; // Il percorso della proprietà nell'oggetto healer (es. 'contacts.email')
-  iconName: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap; // Nome dell'icona
-  iconSet: 'Ionicons' | 'MaterialCommunityIcons'; // Set di icone
-  getDisplayValue: (value: string) => string; // Funzione per formattare il testo visualizzato
-  getUrl: (value: string) => string; // Funzione per formattare l'URL per Linking.openURL
+  id: string;
+  propPath: string;
+  iconName: string;
+  iconSet: "Ionicons" | "MaterialCommunityIcons";
+  getDisplayValue: (value: any) => string;
+  getUrl: (value: any) => string;
 }

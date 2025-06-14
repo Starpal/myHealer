@@ -1,6 +1,6 @@
 import { ContactSocialMediaConfig } from '@/types/index';
 
-export const contactsSocialMediaConfigurations: ContactSocialMediaConfig[] = [
+export const contactsConfigurations: ContactSocialMediaConfig[] = [
   {
     id: 'website',
     propPath: 'contacts.website',
@@ -41,6 +41,10 @@ export const contactsSocialMediaConfigurations: ContactSocialMediaConfig[] = [
     getDisplayValue: (val) => val,
     getUrl: (val) => `tg://resolve?domain=${val}`,
   },
+];
+
+
+export const socialMediaConfigurations: ContactSocialMediaConfig[] = [
   {
     id: 'instagram',
     propPath: 'socialMedia.instagram',
@@ -48,6 +52,14 @@ export const contactsSocialMediaConfigurations: ContactSocialMediaConfig[] = [
     iconSet: 'Ionicons',
     getDisplayValue: (val) => `${val}`,
     getUrl: (val) => `https://instagram.com/${val}`,
+  },
+  {
+    id: 'tiktok',
+    propPath: 'socialMedia.tiktok',
+    iconName: 'logo-tiktok',
+    iconSet: 'Ionicons',
+    getDisplayValue: (val) => `${val}`,
+    getUrl: (val) => `https://tiktok.com/@${val}`,
   },
   {
     id: 'facebook',
@@ -64,14 +76,6 @@ export const contactsSocialMediaConfigurations: ContactSocialMediaConfig[] = [
     iconSet: 'Ionicons',
     getDisplayValue: (val) => `${val}`,
     getUrl: (val) => `https://www.youtube.com/@${val}`, // Formato più comune per i canali YouTube con username
-  },
-  {
-    id: 'tiktok',
-    propPath: 'socialMedia.tiktok',
-    iconName: 'logo-tiktok',
-    iconSet: 'Ionicons',
-    getDisplayValue: (val) => `${val}`,
-    getUrl: (val) => `https://tiktok.com/@${val}`,
   },
   {
     id: 'pinterest',

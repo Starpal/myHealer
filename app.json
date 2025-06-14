@@ -12,7 +12,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.starpal.myHealer",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps",
+          "waze",
+          "citymapper",
+          "citymapper",
+          "hereamaps"
+        ]
       }
     },
     "android": {
