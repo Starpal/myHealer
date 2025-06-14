@@ -14,6 +14,7 @@ import {
   View,
   ViewStyle,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,7 +48,7 @@ export default function HomeScreen() {
     name: "Ubud",
     latitude: -8.519268, // Latitudine di Ubud
     longitude: 115.263298, // Longitudine di Ubud
-    latitudeDelta: 0.0922, // Delta latitude per la visualizzazione
+   latitudeDelta: 0.0922, // Delta latitude per la visualizzazione
     longitudeDelta: 0.0421, // Delta longitudine per la visualizzazione
   };
 
@@ -430,10 +431,10 @@ export default function HomeScreen() {
     // Questo è utile se vuoi essere sicuro che la mappa si centri su `initialRegion`
     // anche se il componente ha un re-render.
     // L'animazione dovrebbe essere fatta solo se il ref è disponibile e la regione è impostata.
-    if (mapRef.current && currentMapRegion) {
-      mapRef.current.animateToRegion(currentMapRegion, 0); // Nessuna animazione per l'inizializzazione
-    }
-  }, [locationText, currentMapRegion]);
+  if (mapRef.current && currentMapRegion) {
+    mapRef.current.animateToRegion(currentMapRegion, 0);
+  }
+}, [locationText, currentMapRegion]); 
 
   return (
     <ParallaxScrollView
@@ -442,8 +443,7 @@ export default function HomeScreen() {
         <Image
           source={
             "https://images.unsplash.com/photo-1494243762909-b498c7e440a9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzN8fGF1cm9yYXxlbnwwfHwwfHx8MA%3D%3D"
-          } // Path to your image
-          //"https://retreathub.com/wp-content/uploads/2025/01/Shamans-Hand-Retreathub.png"
+          }
           style={styles.logo}
         />
       }
@@ -483,6 +483,7 @@ export default function HomeScreen() {
           clearOnFocus={false}
           closeOnBlur={true}
           closeOnSubmit={false}
+          direction={Platform.select({ ios: 'down' })}
           // onSelectItem={()=>onSelectItem(item)}
           dataSet={suggestionsList}
           suggestionsListTextStyle={{ color: "#333" }}
@@ -742,7 +743,7 @@ export default function HomeScreen() {
           //   }
           // }}
         >
-          {currentMapRegion && (
+         {currentMapRegion && (
             <Marker
               coordinate={{
                 latitude: currentMapRegion.latitude,
@@ -750,9 +751,9 @@ export default function HomeScreen() {
               }}
               //title={currentMapRegion.name}
             >
-              {/* <ThemedText type="defaultSemiBold">
+              <ThemedText type="defaultSemiBold">
                 {currentMapRegion.name}
-              </ThemedText> */}
+              </ThemedText>
             </Marker>
           )}
           {/* Aggiungi i Marker per gli healer */}
@@ -769,6 +770,7 @@ export default function HomeScreen() {
                     latitude: healer.latitude,
                     longitude: healer.longitude,
                   }}
+                  tracksViewChanges={false}
                   title={healer.name || healer.healerName || "Healer"}
                   onPress={() => setActiveMarkerId(healer.id)}
                   onCalloutPress={() => {
