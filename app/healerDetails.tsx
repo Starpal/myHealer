@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, Linking } from "react-native";
+import { StyleSheet, TouchableOpacity, Linking, Platform, Alert } from "react-native";
 import { Image } from "expo-image";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedView } from "@/components/ThemedView";
@@ -74,6 +74,140 @@ export default function healerDetails() {
   const getNestedValue = (obj: any, path: string) => {
     return path.split(".").reduce((acc, part) => acc && acc[part], obj);
   };
+
+  // Open system map when click on map marker callout
+      interface HandleCalloutPress {
+        (latitude: number, longitude: number): void;
+      }
+
+const handleCalloutPress = async (latitude: number, longitude: number) => {
+  const { name, healerName, address } = healer;
+
+  // Preferisci una query più descrittiva per l'app di mappe
+  const label = encodeURIComponent(name || healerName || address || "Healer Location");
+
+  // Funzione per aprire Google Maps (versione app o web come fallback)
+  const openGoogleMaps = async () => {
+    // Per Google Maps, usiamo 'q' per la ricerca/marker e 'll' per centrare la mappa.
+    // Il formato 'q=lat,lon(Label)' è ottimo per i marker con etichetta.
+    const googleMapsAppUrl = `comgooglemaps://?q=${latitude},${longitude}(${label})&center=${latitude},${longitude}`;
+    // Per la versione web di Google Maps, si può usare il formato 'q' per la ricerca
+    const googleMapsWebUrl = `http://maps.google.com/?q=${latitude},${longitude}(${label})`;
+
+    try {
+      const supported = await Linking.canOpenURL(googleMapsAppUrl);
+      if (supported) {
+        await Linking.openURL(googleMapsAppUrl);
+        return true; // Aperto con successo
+      }
+    } catch (error) {
+      console.log('Error opening Google Maps App:', error);
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(googleMapsWebUrl);
+      if (supported) {
+        await Linking.openURL(googleMapsWebUrl);
+        return true; // Aperto con successo
+      }
+    } catch (error) {
+      console.log('Error opening Google Maps Web:', error);
+    }
+    return false; // Non aperto
+  };
+
+  // Funzione per aprire Apple Maps
+  const openAppleMaps = async () => {
+    // Per Apple Maps, usiamo 'll' per lat/lon e 'q' per il label del marker.
+    const appleMapsUrl = `http://maps.apple.com/?ll=${latitude},${longitude}&q=${label}`;
+    // Si può anche usare maps://?ll=${latitude},${longitude}&q=${label} se si preferisce lo schema nativo
+    try {
+      const supported = await Linking.canOpenURL(appleMapsUrl);
+      if (supported) {
+        await Linking.openURL(appleMapsUrl);
+        return true; // Aperto con successo
+      }
+    } catch (error) {
+      console.log('Error opening Apple Maps:', error);
+    }
+    return false; // Non aperto
+  };
+
+
+  if (Platform.OS === 'ios') {
+    const isGoogleMapsInstalled = await Linking.canOpenURL('comgooglemaps://');
+
+    let actions = [];
+
+    actions.push({
+      text: 'Apple Maps',
+      onPress: () => openAppleMaps(),
+    });
+
+    if (isGoogleMapsInstalled) {
+      actions.push({
+        text: 'Google Maps',
+        onPress: () => openGoogleMaps(),
+      });
+    }
+
+    if (actions.length > 0) {
+      Alert.alert(
+        'Apri con',
+        'Scegli l\'app di mappe che desideri utilizzare:',
+        [
+          ...actions,
+          {
+            text: 'Annulla',
+            style: 'cancel',
+          },
+        ],
+        { cancelable: true }
+      );
+    } else {
+      Alert.alert('Nessuna app di mappe trovata', 'Non è stato possibile trovare app di mappe compatibili sul tuo dispositivo.');
+    }
+
+  } else if (Platform.OS === 'android') {
+    // Per Android, il 'geo:' URI è versatile.
+    // L'aggiunta di 'q=lat,lon(Label)' dopo il punto interrogativo è per aggiungere un marker con label.
+    const geoUrl = `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`;
+
+    try {
+      const supported = await Linking.canOpenURL(geoUrl);
+      if (supported) {
+        await Linking.openURL(geoUrl);
+      } else {
+        // Fallback a Google Maps Web se geo URI non funziona (improbabile su Android)
+        const googleMapsWebUrl = `http://maps.google.com/?q=${latitude},${longitude}(${label})`;
+        const webSupported = await Linking.canOpenURL(googleMapsWebUrl);
+        if (webSupported) {
+          await Linking.openURL(googleMapsWebUrl);
+        } else {
+          Alert.alert('Nessuna app di mappe trovata', 'Non è stato possibile aprire un\'app di mappe sul tuo dispositivo.');
+        }
+      }
+    } catch (error) {
+      console.log('Error opening Maps (Android):', error);
+      Alert.alert('Errore', 'Si è verificato un errore nell\'apertura dell\'app di mappe.');
+    }
+  } else {
+    // Per altre piattaforme (es. web)
+    const webMapsUrl = `http://maps.google.com/?q=${latitude},${longitude}(${label})`;
+    try {
+      const supported = await Linking.canOpenURL(webMapsUrl);
+      if (supported) {
+        await Linking.openURL(webMapsUrl);
+      } else {
+        Alert.alert('Nessuna app di mappe trovata', 'Non è stato possibile aprire un\'app di mappe sul tuo dispositivo.');
+      }
+    } catch (error) {
+      console.log('Error opening web Maps:', error);
+      Alert.alert('Errore', 'Si è verificato un errore nell\'apertura dell\'app di mappe.');
+    }
+  }
+  }
+
 
   return (
     <ParallaxScrollView
@@ -227,6 +361,7 @@ export default function healerDetails() {
               }}
               title={healer.name || healer.healerName}
               description={healer.address}
+              onCalloutPress={() => handleCalloutPress(healer.latitude!, healer.longitude!)}
             />
           </MapView>
         ) : (
