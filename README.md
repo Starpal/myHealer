@@ -1,50 +1,60 @@
-# Welcome to your Expo app 👋
+# ✦ myHealer
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> A React Native application for discovering holistic healers – browse practitioners by category, view their locations on an interactive map, and connect with them directly.
 
-## Get started
+---
 
-1. Install dependencies
+## ✧ Overview
 
-   ```bash
-   npm install
-   ```
+**myHealer** is a cross-platform mobile app designed to help users find holistic wellness practitioners in their area. Browse through different healing modalities, explore detailed practitioner profiles, and locate them on an interactive map – all in one intuitive interface.
 
-2. Start the app
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## ✧ Features
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **🔍 Browse by Category** – Explore healers across multiple holistic modalities
+- **📍 Interactive Map** – View practitioner locations with custom markers
+- **📍 Geolocation** – Find healers near your current position
+- **👤 Practitioner Profiles** – Detailed view with contact info, specialties, and location
+- **🗺️ Navigation** – Open practitioner location directly in your preferred maps app
+- **📱 Cross-Platform** – iOS, Android, and Web support
+- **🧩 Clean UI** – Intuitive and accessible design
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## ✧ Tech Stack
 
-When you're ready, run:
+| Technology | Purpose |
+|------------|---------|
+| **React Native 0.76+** | Mobile framework |
+| **Expo 51+** | Development platform |
+| **TypeScript 5.9** | Type-safe code |
+| **Expo Router** | File-based navigation |
+| **React Native Maps** | Interactive map integration |
+| **Expo Location** | Geolocation services |
+| **EAS Build** | Build and deployment |
+| **ESLint** | Code quality |
+
+---
+
+## ✧ Installation
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm or yarn
+- Expo CLI
+
+### Setup
 
 ```bash
-npm run reset-project
-```
+# Clone the repository
+git clone https://github.com/Starpal/myHealer.git
+cd myHealer
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+# Install dependencies
+npm install
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Start the development server
+npx expo start
